@@ -115,7 +115,7 @@
       <p style="font-size: 22px; font-weight: bold;">Din poäng: <span id="finalScore">0</span> meter</p>
 
       <div id="submitSection">
-        <input type="text" id="playerName" placeholder="Skriv in ditt namn...">
+        <input type="text" id="playerName" maxlength="20" placeholder="Skriv in ditt namn...">
         <button class="btn btn-green" onclick="saveHighscore()">Spara poäng & Spela igen</button>
       </div>
 
@@ -171,6 +171,9 @@ const dbHeaders = {
   'Content-Type': 'application/json',
   'Prefer': 'return=minimal'
 };
+
+// Namn kommer från databasen och kan innehålla vad som helst – escapa alltid innan de läggs i HTML.
+const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
 
 // ================= STANDARDBANOR =================
 const DEFAULT_DISTRACTORS = ["Fotboll","Tandborste","Banan","Kaffebryggare","Skohorn","Mikrovågsugn","Cykel","Pannkaka","Soffa","Kattunge","Traktor","Paraply","Moped","Tavla","Gurka","Kudde","Glass","Solglasögon","Ryggsäck","Gitarr"];
@@ -275,7 +278,7 @@ function renderTrackGrid(){
     const card = document.createElement("div");
     card.className = "trackCard" + (t.id === selectedTrackId ? " selected" : "");
     card.style.borderColor = t.color || "#3b82f6";
-    card.innerHTML = `<div class="trackName">${t.name}</div><div class="trackMeta">${t.concepts.length} begrepp${t.builtin ? "" : " · egen bana"}</div>`;
+    card.innerHTML = `<div class="trackName">${escapeHtml(t.name)}</div><div class="trackMeta">${t.concepts.length} begrepp${t.builtin ? "" : " · egen bana"}</div>`;
     card.onclick = () => selectTrack(t.id);
     if (!t.builtin) {
       const delBtn = document.createElement("button");
@@ -424,7 +427,7 @@ async function refreshMenuHighscore(){
   globalTopName = data[0].name;
   tbody.innerHTML = "";
   data.forEach((s, i) => {
-    tbody.innerHTML += `<tr><td>${i === 0 ? "🥇" : i + 1}</td><td>${s.name}</td><td>${s.score} m</td></tr>`;
+    tbody.innerHTML += `<tr><td>${i === 0 ? "🥇" : i + 1}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.score)} m</td></tr>`;
   });
 }
 
@@ -449,7 +452,7 @@ async function loadAllScores(){
   }
   tbody.innerHTML = "";
   data.forEach((s, i) => {
-    tbody.innerHTML += `<tr><td>${i + 1}</td><td>${s.name}</td><td>${s.score} m</td></tr>`;
+    tbody.innerHTML += `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.score)} m</td></tr>`;
   });
 }
 
@@ -782,12 +785,12 @@ async function loadHighscores(){
       tbody.innerHTML = "<tr><td colspan='3'>Inga rekord ännu! Bli den första!</td></tr>";
     } else {
       data.forEach((s, index) => {
-        tbody.innerHTML += `<tr><td>${index + 1}</td><td>${s.name}</td><td>${s.score} m</td></tr>`;
+        tbody.innerHTML += `<tr><td>${index + 1}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.score)} m</td></tr>`;
       });
     }
   } catch (error) {
     console.error("Fel vid hämtning:", error);
-    tbody.innerHTML = `<tr><td colspan='3'>Kunde inte hämta poäng.<br><small>${(error && error.message) || error}</small></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan='3'>Kunde inte hämta poäng.<br><small>${escapeHtml((error && error.message) || error)}</small></td></tr>`;
   }
 }
 
