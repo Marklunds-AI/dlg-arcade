@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alla verktyg – DLG Arcade</title>
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/arcade.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <div class="wrap lib-page">
+      <div class="page-title">
+        <h1>Alla <span>verktyg</span></h1>
+        <p>Hitta spel och övningar för dina kurser.</p>
+      </div>
+
+      <div class="filters">
+        <div class="filter-row">
+          <label class="search"><span id="search-icon"></span>
+            <input type="search" id="q" placeholder="Sök verktyg eller begrepp" aria-label="Sök">
+          </label>
+          <select class="select" id="course" aria-label="Ämne eller kurs"></select>
+          <select class="select" id="program" aria-label="Program" style="flex-basis:160px">
+            <option value="">Alla program</option>
+            <option value="BF">Barn- och fritid (BF)</option>
+          </select>
+        </div>
+        <div class="filter-foot">
+          <div class="chips" id="chips" role="group" aria-label="Filtrera"></div>
+          <div class="count" id="count" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="grid lib" id="lib-grid"></div>
+      <div class="no-hits" id="no-hits" hidden>
+        <strong>Inga verktyg matchar din sökning.</strong>
+        <button class="btn btn-inverse btn-md" id="clear">Rensa filter</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+</div>
+
+<script src="assets/js/arcade.js"></script>
+<script>
+renderChrome('verktyg');
+$('#search-icon').outerHTML = icon('search', 20, '#C8CACD');
+$('#course').innerHTML = '<option value="">Alla ämnen</option>' + COURSES.map(c => `<option>${esc(c)}</option>`).join('');
+
+const f = { type: 'Alla', course: '', program: '', q: '', onlyNew: false };
+function render() {
+  const q = f.q.trim().toLowerCase();
+  const list = TOOLS.filter(t => (f.type === 'Alla' || t.type === f.type)
+    && (!f.course || t.courses.includes(f.course))
+    && (!f.program || t.program === f.program || t.program === 'Alla program')
+    && (!f.onlyNew || t.isNew)
+    && (!q || (t.title + ' ' + t.desc + ' ' + t.courses.join(' ')).toLowerCase().includes(q)));
+  $('#lib-grid').innerHTML = list.map(t => cardHTML(t, 'lib')).join('');
+  $('#no-hits').hidden = list.length > 0;
+  $('#count').textContent = list.length === 1 ? '1 verktyg' : list.length + ' verktyg';
+  $('#chips').innerHTML = ['Alla', 'Spel', 'Quiz', 'Övning'].map(l =>
+    `<button class="chip" aria-pressed="${f.type === l}" data-type="${l}">${l}</button>`).join('') +
+    `<button class="chip" aria-pressed="${f.onlyNew}" data-new="1">Bara nya</button>`;
+}
+$('#chips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.new) f.onlyNew = !f.onlyNew; else f.type = b.dataset.type;
+  render();
+});
+$('#q').addEventListener('input', e => { f.q = e.target.value; render(); });
+$('#course').addEventListener('change', e => { f.course = e.target.value; render(); });
+$('#program').addEventListener('change', e => { f.program = e.target.value; render(); });
+$('#clear').addEventListener('click', () => {
+  Object.assign(f, { type: 'Alla', course: '', program: '', q: '', onlyNew: false });
+  $('#q').value = ''; $('#course').value = ''; $('#program').value = ''; render();
+});
+render();
+</script>
+</body>
+</html>

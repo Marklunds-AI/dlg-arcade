@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="sv" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Begrepps-Snake Deluxe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; }
+        body {
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            height: 100dvh;
+        }
+        input, textarea { user-select: text; -webkit-user-select: text; }
+        .font-orbitron { font-family: 'Orbitron', 'Segoe UI', sans-serif; }
+        .neon-glow-cyan { text-shadow: 0 0 10px rgba(6,182,212,0.7), 0 0 20px rgba(6,182,212,0.4); }
+        .neon-glow-yellow { text-shadow: 0 0 10px rgba(250,204,21,0.6), 0 0 20px rgba(250,204,21,0.3); }
+        .neon-box-yellow {
+            box-shadow: 0 0 15px rgba(250,204,21,0.25), inset 0 0 15px rgba(250,204,21,0.12);
+            border: 1px solid rgba(250,204,21,0.55);
+        }
+        .neon-box-repeat {
+            box-shadow: 0 0 18px rgba(236,72,153,0.35), inset 0 0 15px rgba(236,72,153,0.15);
+            border-color: rgba(236,72,153,0.7) !important;
+        }
+        .trippy-effect { animation: trippyHue 2s infinite linear; }
+        @keyframes trippyHue {
+            0% { filter: hue-rotate(0deg) contrast(120%); }
+            50% { filter: hue-rotate(180deg) contrast(150%); }
+            100% { filter: hue-rotate(360deg) contrast(120%); }
+        }
+        .pulse-btn { animation: btnPulse 2s infinite ease-in-out; }
+        @keyframes btnPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        .q-flash { animation: qFlash 0.5s ease-out; }
+        @keyframes qFlash {
+            0% { transform: scale(0.97); box-shadow: 0 0 35px rgba(250,204,21,0.7), inset 0 0 20px rgba(250,204,21,0.3); }
+            100% { transform: scale(1); }
+        }
+        .record-hot { color: #f43f5e !important; text-shadow: 0 0 12px rgba(244,63,94,0.8); }
+        .diff-btn[aria-pressed="true"] { background: rgba(6,182,212,0.18); border-color: #22d3ee; color: #fff; box-shadow: 0 0 14px rgba(6,182,212,0.35); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15,23,42,0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.4); border-radius: 3px; }
+        select option { background: #0f172a; }
+        button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible {
+            outline: 2px solid #22d3ee; outline-offset: 2px;
+        }
+        .board td { padding: 3px 6px; }
+        .board tr:first-child td { color: #facc15; font-weight: 700; }
+        @media (prefers-reduced-motion: reduce) {
+            .trippy-effect, .pulse-btn, .animate-bounce, .animate-pulse, .q-flash { animation: none !important; }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center bg-slate-950 text-slate-100 overflow-hidden p-2 sm:p-3 gap-2">
+
+    <!-- HEADER / STATS -->
+    <header class="shrink-0 w-full max-w-6xl flex flex-wrap justify-between items-center gap-x-3 gap-y-1 bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800 backdrop-blur">
+        <h1 class="text-base sm:text-2xl font-black font-orbitron tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 neon-glow-cyan">
+            BEGREPPS-SNAKE <span class="text-[10px] sm:text-sm px-1.5 py-0.5 rounded bg-pink-600 text-white font-mono uppercase tracking-widest">DELUXE</span>
+        </h1>
+        <div class="flex items-center gap-3 sm:gap-6 text-sm sm:text-base">
+            <div class="flex flex-col items-center leading-tight">
+                <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-wider">Poäng</span>
+                <span id="scoreDisplay" class="font-orbitron font-bold text-base sm:text-2xl text-cyan-400">0</span>
+            </div>
+            <div class="flex flex-col items-center leading-tight" title="Topplistans etta för vald lista och svårighetsgrad">
+                <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-wider">🏆 Rekord</span>
+                <span id="highScoreDisplay" class="font-orbitron font-bold text-base sm:text-2xl text-yellow-400 transition-colors">–</span>
+            </div>
+            <div class="flex flex-col items-center leading-tight">
+                <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-wider">Combo</span>
+                <span id="comboDisplay" class="font-orbitron font-bold text-base sm:text-2xl text-pink-500">x1</span>
+            </div>
+            <div class="flex flex-col items-center leading-tight">
+                <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-wider">Klart</span>
+                <span id="progressDisplay" class="font-orbitron font-bold text-base sm:text-2xl text-emerald-400">0/0</span>
+            </div>
+            <button id="soundToggleBtn" class="p-1.5 sm:p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700" title="Växla ljud" aria-label="Växla ljud">🔊</button>
+        </div>
+    </header>
+
+    <!-- QUESTION HUD -->
+    <section id="questionBox" class="shrink-0 w-full max-w-6xl neon-box-yellow bg-slate-950/80 rounded-xl px-4 py-2 flex flex-col items-center justify-center text-center">
+        <span id="questionLabel" class="text-[11px] sm:text-xs text-yellow-500/80 font-bold tracking-wider">Vilket begrepp förklaras?</span>
+        <p id="questionText" class="text-base sm:text-xl font-bold text-yellow-300 neon-glow-yellow leading-snug">Välj en begreppslista och starta spelet.</p>
+        <p id="feedbackLine" class="min-h-[18px] text-xs sm:text-sm text-slate-400 leading-snug"></p>
+    </section>
+
+    <!-- MAIN -->
+    <main class="flex-1 min-h-0 w-full max-w-6xl flex flex-col md:flex-row gap-3">
+
+        <div id="stageWrap" class="flex-1 min-h-0 min-w-0 flex items-center justify-center">
+            <div id="canvasContainer" class="relative rounded-2xl overflow-hidden bg-slate-900 border-2 border-cyan-500/40 shadow-2xl" style="width:600px;height:480px">
+                <canvas id="gameCanvas" width="600" height="480" class="w-full h-full block bg-slate-950"></canvas>
+
+                <!-- Effekter ligger ovanpå spelplanen så de inte tar höjd -->
+                <div id="powerupBar" class="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5 justify-center pointer-events-none z-10"></div>
+
+                <!-- PAUSE -->
+                <div id="pauseOverlay" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+                    <h2 class="text-3xl font-black font-orbitron text-yellow-400 mb-3 tracking-widest">PAUSAT</h2>
+                    <p class="text-slate-300 mb-5 text-sm">Läs förklaringen i lugn och ro.</p>
+                    <button id="resumeBtn" class="px-6 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold font-orbitron text-base shadow-lg shadow-cyan-500/30 hover:bg-cyan-400 transition-all">FORTSÄTT ▶️</button>
+                    <button id="quitBtn" class="mt-3 px-5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-sm font-bold hover:bg-slate-700">Avsluta och gå till menyn</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIDE PANEL (bara på större skärmar) -->
+        <aside class="hidden md:flex w-72 shrink-0 min-h-0 overflow-y-auto bg-slate-900/80 rounded-2xl border border-slate-800 p-4 backdrop-blur flex-col gap-4 text-sm">
+            <div>
+                <h3 class="font-orbitron font-bold text-cyan-400 mb-2 text-xs tracking-wider flex items-center gap-1.5"><span>🎯</span> Så spelar du</h3>
+                <div class="grid grid-cols-1 gap-1.5 text-slate-300">
+                    <div class="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800"><span>✅</span><div><strong class="text-emerald-400">Rätt begrepp:</strong> +100 × combo</div></div>
+                    <div class="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800"><span>😵</span><div><strong class="text-rose-400">Fel begrepp:</strong> −30, omvänd styrning i 4 s</div></div>
+                    <div class="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800"><span>🔁</span><div><strong class="text-pink-400">Missade begrepp</strong> kommer tillbaka senare</div></div>
+                    <div class="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800"><span>🧱</span><div><strong class="text-sky-400">Öppna väggar</strong> – åk rakt igenom</div></div>
+                    <div class="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800"><span>✂️</span><div><strong class="text-orange-400">Biter du dig själv</strong> tappar du svansen</div></div>
+                    <div class="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800"><span>🌀</span><div><strong class="text-blue-400">Portaler:</strong> A ↔ B</div></div>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-orbitron font-bold text-yellow-400 mb-2 text-xs tracking-wider flex items-center gap-1.5"><span>✨</span> Bonus</h3>
+                <div class="grid grid-cols-2 gap-1.5 text-slate-300 text-xs">
+                    <div class="bg-slate-950/50 p-1.5 rounded-lg border border-slate-800">⭐ <strong class="text-yellow-400">Guld</strong> +50</div>
+                    <div class="bg-slate-950/50 p-1.5 rounded-lg border border-slate-800">🌶️ <strong class="text-red-400">Turbo</strong> 2× fart</div>
+                    <div class="bg-slate-950/50 p-1.5 rounded-lg border border-slate-800">🧊 <strong class="text-cyan-300">Slomo</strong></div>
+                    <div class="bg-slate-950/50 p-1.5 rounded-lg border border-slate-800">💊 <strong class="text-pink-400">Krymp</strong></div>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-orbitron font-bold text-pink-400 mb-2 text-xs tracking-wider flex items-center gap-1.5"><span>🏅</span> Utmärkelser</h3>
+                <div id="achievementsContainer" class="flex flex-wrap gap-1.5"></div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- MOBILE D-PAD -->
+    <div id="touchControls" class="shrink-0 w-full max-w-[220px] grid grid-cols-3 gap-1.5 md:hidden">
+        <div></div>
+        <button id="btnUp" class="h-11 rounded-xl bg-slate-800 border border-slate-700 text-xl flex items-center justify-center active:bg-cyan-600 transition-colors shadow" aria-label="Upp">⬆️</button>
+        <div></div>
+        <button id="btnLeft" class="h-11 rounded-xl bg-slate-800 border border-slate-700 text-xl flex items-center justify-center active:bg-cyan-600 transition-colors shadow" aria-label="Vänster">⬅️</button>
+        <button id="btnDown" class="h-11 rounded-xl bg-slate-800 border border-slate-700 text-xl flex items-center justify-center active:bg-cyan-600 transition-colors shadow" aria-label="Ner">⬇️</button>
+        <button id="btnRight" class="h-11 rounded-xl bg-slate-800 border border-slate-700 text-xl flex items-center justify-center active:bg-cyan-600 transition-colors shadow" aria-label="Höger">➡️</button>
+    </div>
+
+    <footer class="shrink-0 hidden md:block text-center text-xs text-slate-500">
+        Styr med piltangenterna eller WASD. P pausar.
+    </footer>
+
+    <!-- ================= START-MENY ================= -->
+    <div id="startOverlay" class="fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-md overflow-y-auto p-4">
+        <div class="min-h-full flex items-center justify-center">
+            <div class="w-full max-w-4xl grid md:grid-cols-2 gap-4">
+                <div class="bg-slate-900/90 border border-cyan-500/40 rounded-2xl p-5 flex flex-col items-center text-center">
+                    <div class="w-14 h-14 mb-3 rounded-2xl bg-gradient-to-tr from-cyan-500 to-pink-500 flex items-center justify-center text-3xl shadow-lg shadow-cyan-500/30 animate-bounce">🐍</div>
+                    <h2 class="text-2xl sm:text-3xl font-black font-orbitron text-white mb-1">BEGREPPS-SNAKE</h2>
+                    <p class="text-slate-400 text-sm max-w-sm mb-4">Läs förklaringen och kör in i rätt begrepp. Missade begrepp kommer tillbaka tills du kan dem.</p>
+
+                    <label for="datasetSelect" class="self-stretch text-left text-xs text-slate-400 font-bold mb-1">Begreppslista</label>
+                    <select id="datasetSelect" class="w-full mb-3 px-3 py-2.5 rounded-xl bg-slate-950 border border-cyan-500/50 text-slate-100 font-semibold"></select>
+
+                    <span class="self-stretch text-left text-xs text-slate-400 font-bold mb-1">Svårighetsgrad</span>
+                    <div id="difficultyGroup" class="w-full grid grid-cols-3 gap-2 mb-4" role="group" aria-label="Svårighetsgrad"></div>
+
+                    <button id="startBtn" class="pulse-btn w-full px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 text-slate-950 font-black font-orbitron tracking-wider text-lg shadow-lg shadow-cyan-500/40 hover:brightness-110 active:scale-95 transition-all">
+                        STARTA SPELET 🚀
+                    </button>
+                    <button id="openCustomBtn" class="mt-3 px-5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-sm font-bold hover:bg-slate-700 transition-colors">
+                        + Lägg in egen begreppslista
+                    </button>
+                </div>
+
+                <div class="bg-slate-900/90 border border-yellow-500/40 rounded-2xl p-5 flex flex-col">
+                    <h3 class="font-orbitron font-bold text-yellow-400 text-sm tracking-wider mb-1">🏆 TOPP 10</h3>
+                    <p id="menuBoardCaption" class="text-xs text-slate-400 mb-3"></p>
+                    <table class="board w-full text-sm text-slate-200"><tbody id="menuBoardBody"><tr><td>Hämtar…</td></tr></tbody></table>
+                    <button class="showAllBtn mt-auto pt-3 self-start text-sm font-bold text-yellow-400 hover:text-yellow-300 underline underline-offset-4">Visa alla resultat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= SLUTSKÄRM ================= -->
+    <div id="endOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-md overflow-y-auto p-4">
+        <div class="min-h-full flex items-center justify-center">
+            <div class="w-full max-w-4xl grid md:grid-cols-2 gap-4">
+                <div class="bg-slate-900/90 border border-pink-500/40 rounded-2xl p-5 flex flex-col items-center text-center">
+                    <div id="endIcon" class="text-5xl mb-2 animate-bounce">🏆</div>
+                    <h2 id="endTitle" class="text-2xl sm:text-3xl font-black font-orbitron text-yellow-400 mb-1">ALLA BEGREPP KLARADE!</h2>
+                    <p id="endReason" class="text-slate-400 text-sm mb-4"></p>
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 w-full max-w-xs mb-4 space-y-1.5 text-left">
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-400">Slutpoäng:</span><span id="finalScore" class="font-orbitron font-bold text-cyan-400 text-lg">0</span></div>
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-400">Svårighetsgrad:</span><span id="finalDifficulty" class="font-bold text-slate-200">Normal</span></div>
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-400">Rätt på första försöket:</span><span id="finalFirstTry" class="font-orbitron font-bold text-emerald-400">0</span></div>
+                        <div class="flex justify-between items-center text-sm"><span class="text-slate-400">Felval totalt:</span><span id="finalMistakes" class="font-orbitron font-bold text-pink-400">0</span></div>
+                    </div>
+
+                    <div id="submitSection" class="w-full max-w-xs mb-2">
+                        <label for="playerName" class="block text-left text-xs text-slate-400 font-bold mb-1">Spara på topplistan</label>
+                        <div class="flex gap-2">
+                            <input id="playerName" type="text" maxlength="20" placeholder="Ditt namn" class="flex-1 min-w-0 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100">
+                            <button id="saveScoreBtn" class="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-950 font-black font-orbitron text-sm hover:brightness-110">SPARA</button>
+                        </div>
+                    </div>
+                    <p id="saveMsg" class="min-h-[20px] text-sm mb-3 text-slate-400"></p>
+
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button id="restartBtn" class="pulse-btn px-7 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black font-orbitron text-base shadow-lg shadow-pink-500/40 hover:brightness-110 active:scale-95 transition-all">SPELA IGEN 🔄</button>
+                        <button id="menuBtn" class="px-5 py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-bold hover:bg-slate-700">Till menyn</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <div class="bg-slate-900/90 border border-yellow-500/40 rounded-2xl p-5 flex flex-col">
+                        <h3 class="font-orbitron font-bold text-yellow-400 text-sm tracking-wider mb-1">🏆 TOPP 10</h3>
+                        <p id="endBoardCaption" class="text-xs text-slate-400 mb-3"></p>
+                        <table class="board w-full text-sm text-slate-200"><tbody id="endBoardBody"></tbody></table>
+                        <button class="showAllBtn mt-3 self-start text-sm font-bold text-yellow-400 hover:text-yellow-300 underline underline-offset-4">Visa alla resultat</button>
+                    </div>
+                    <div id="practiceBox" class="hidden bg-slate-900/90 border border-pink-500/40 rounded-2xl p-4 text-left">
+                        <h3 class="font-orbitron font-bold text-pink-400 text-xs tracking-wider mb-2">ÖVA MER PÅ</h3>
+                        <ul id="practiceList" class="space-y-1.5 text-sm text-slate-300"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ALLA RESULTAT ================= -->
+    <div id="allScoresOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-md max-h-[85dvh] flex flex-col bg-slate-900 border border-yellow-500/40 rounded-2xl p-5">
+            <h2 class="text-xl font-black font-orbitron text-yellow-400 mb-1">Alla resultat</h2>
+            <p id="allBoardCaption" class="text-xs text-slate-400 mb-3"></p>
+            <div class="flex-1 min-h-0 overflow-y-auto">
+                <table class="board w-full text-sm text-slate-200"><tbody id="allBoardBody"></tbody></table>
+            </div>
+            <button id="closeAllBtn" class="mt-4 self-end px-5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-bold hover:bg-slate-700">Stäng</button>
+        </div>
+    </div>
+
+    <!-- ================= EGEN LISTA ================= -->
+    <div id="customOverlay" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-lg max-h-[90dvh] overflow-y-auto bg-slate-900 border border-cyan-500/40 rounded-2xl p-5 shadow-2xl shadow-cyan-500/10">
+            <h2 class="text-xl font-black font-orbitron text-cyan-400 mb-1">Egen begreppslista</h2>
+            <p class="text-slate-400 text-sm mb-3">En rad per begrepp: <b class="text-slate-200">Begrepp | Förklaring</b>. Semikolon fungerar också, och du kan klistra in två kolumner direkt från Excel eller Google Kalkylark. Minst 3 begrepp.</p>
+            <label for="customName" class="block text-xs text-slate-400 font-bold mb-1">Namn på listan</label>
+            <input id="customName" type="text" maxlength="60" class="w-full mb-3 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100" placeholder="T.ex. Pedagogik 1 – Lärandeteorier" value="Egen lista">
+            <label for="customText" class="block text-xs text-slate-400 font-bold mb-1">Begrepp</label>
+            <textarea id="customText" class="w-full h-40 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 font-mono text-sm resize-y" placeholder="Objektiv hälsa | Hälsa bedömd utifrån fakta&#10;Subjektiv hälsa | Hälsa bedömd utifrån känslor&#10;Psykosomatiskt | Kroppsliga symtom med psykisk orsak"></textarea>
+            <p id="customError" class="min-h-[20px] text-rose-400 text-sm mt-1"></p>
+            <div class="flex flex-wrap gap-2 justify-end mt-2">
+                <button id="deleteCustomBtn" class="hidden mr-auto px-4 py-2 rounded-xl bg-slate-800 border border-rose-500/50 text-rose-300 text-sm font-bold hover:bg-slate-700">Ta bort listan</button>
+                <button id="cancelCustomBtn" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold hover:bg-slate-700">Avbryt</button>
+                <button id="saveCustomBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 text-slate-950 font-black font-orbitron hover:brightness-110">Spara och välj</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================
+        //  TOPPLISTA (Supabase – samma projekt som Begreppsracet)
+        // =========================================================
+        const SUPABASE_URL = 'https://yafkxfuveudkccjkkcto.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZmt4ZnV2ZXVka2NjamtrY3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxMjgxNzMsImV4cCI6MjA5MTcwNDE3M30.yR26rgUwAouA9LV6MuXncOTsIiQvrhhe06o4vqK3pA0';
+        const SCORE_TABLE = 'SnakeHighscore';
+        const dbUrl = `${SUPABASE_URL}/rest/v1/${SCORE_TABLE}`;
+        const dbHeaders = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+        };
+
+        async function readError(res) {
+            let detail = '';
+            try { const j = await res.json(); detail = j.message || j.hint || JSON.stringify(j); } catch (e) {}
+            if (res.status === 404 || /does not exist|Could not find the table/i.test(detail)) {
+                detail = `Tabellen "${SCORE_TABLE}" finns inte i Supabase ännu. ` + detail;
+            }
+            return `HTTP ${res.status}${detail ? ' – ' + detail : ''}`;
+        }
+
+        async function fetchBoard(list, difficulty, limit) {
+            const q = `?select=name,score&list=eq.${encodeURIComponent(list)}&difficulty=eq.${encodeURIComponent(difficulty)}&order=score.desc&limit=${limit}`;
+            const res = await fetch(dbUrl + q, { method: 'GET', headers: dbHeaders });
+            if (!res.ok) throw new Error(await readError(res));
+            return res.json();
+        }
+
+        async function postScore(name, score, list, difficulty) {
+            const res = await fetch(dbUrl, { method: 'POST', headers: dbHeaders, body: JSON.stringify({ name, score, list, difficulty }) });
+            if (!res.ok) throw new Error(await readError(res));
+        }
+
+        // =========================================================
+        //  BEGREPPSLISTOR
+        // =========================================================
+        const BUILTIN_DATASETS = {
+            "BF yrkesämnen – Perspektiv på hälsa": [
+                { term: "Objektiv hälsa", def: "Hälsa bedömd utifrån fakta och saklighet." },
+                { term: "Subjektiv hälsa", def: "Hälsa bedömd utifrån värderingar och känslor." },
+                { term: "Psykosomatiskt", def: "Kroppsliga symtom med psykisk orsak." },
+                { term: "Helhetsperspektiv", def: "Man ser helheten inte detaljer." },
+                { term: "Fysisk hälsa", def: "Hur kroppen mår och fungerar." },
+                { term: "Psykisk hälsa", def: "Inre välbefinnande, hur vi mår i tankar och känslor." },
+                { term: "Social hälsa", def: "Hur relationerna är till andra människor och om det sociala livet fungerar." },
+                { term: "Allmänt hälsotillstånd", def: "Hur man uppfattar sin egna hälsa (pigg, trött, frisk)." },
+                { term: "Funktionsvariation", def: "Rörelsehinder, mentala variationer eller syn- och hörselnedsättningar." },
+                { term: "Nedstämdhet", def: "Känner sig nere, inte på topp eller ledsen." },
+                { term: "WHO", def: "Världshälsoorganisationen." },
+                { term: "Fattigdom", def: "Att inte ha tillräckligt med pengar för att klara sig." },
+                { term: "Välfärd", def: "Att befolkningen har pengar nog för att leva bättre än vad man behöver." }
+            ]
+        };
+
+        const STORAGE = {
+            get(key, fallback) { try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; } },
+            set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
+        };
+        const CUSTOM_KEY = 'begreppssnake_custom_lists';
+        let customDatasets = STORAGE.get(CUSTOM_KEY, {});
+        const allDatasets = () => ({ ...BUILTIN_DATASETS, ...customDatasets });
+
+        // =========================================================
+        //  SVÅRIGHETSGRADER
+        // =========================================================
+        const DIFFICULTIES = {
+            easy:     { label: 'Easy',     emoji: '🐢', base: 175, chili: 115, ice: 250, hint: 'Lugn fart' },
+            normal:   { label: 'Normal',   emoji: '🐍', base: 120, chili: 65,  ice: 185, hint: 'Standard' },
+            hardcore: { label: 'Hardcore', emoji: '🔥', base: 78,  chili: 48,  ice: 125, hint: 'Snabb!' }
+        };
+        let difficulty = STORAGE.get('begreppssnake_difficulty', 'normal');
+        if (!DIFFICULTIES[difficulty]) difficulty = 'normal';
+
+        // =========================================================
+        //  LJUDMOTOR (Web Audio)
+        // =========================================================
+        class SoundEngine {
+            constructor() { this.ctx = null; this.muted = false; }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            tone(type, steps, vol, dur, delay = 0) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime + delay;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    steps.forEach(([f, t, mode]) => {
+                        if (t === 0) osc.frequency.setValueAtTime(f, now);
+                        else if (mode === 'exp') osc.frequency.exponentialRampToValueAtTime(f, now + t);
+                        else if (mode === 'lin') osc.frequency.linearRampToValueAtTime(f, now + t);
+                        else osc.frequency.setValueAtTime(f, now + t);
+                    });
+                    gain.gain.setValueAtTime(vol, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + dur);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(now); osc.stop(now + dur);
+                } catch (e) {}
+            }
+            playEat()     { this.tone('sine', [[300, 0], [600, 0.1, 'exp']], 0.3, 0.1); }
+            playCorrect() {
+                this.tone('triangle', [[523, 0]], 0.25, 0.12);
+                this.tone('triangle', [[659, 0]], 0.25, 0.12, 0.07);
+                this.tone('triangle', [[784, 0]], 0.25, 0.2, 0.14);
+            }
+            playPowerup() { this.tone('triangle', [[400, 0], [600, 0.08], [800, 0.16]], 0.3, 0.25); }
+            playWrong()   { this.tone('sawtooth', [[200, 0], [500, 0.15, 'lin'], [120, 0.35, 'lin']], 0.25, 0.35); }
+            playPortal()  { this.tone('sine', [[800, 0], [200, 0.2, 'exp']], 0.3, 0.2); }
+            playBite()    { this.tone('sawtooth', [[300, 0], [60, 0.4, 'exp']], 0.35, 0.4); }
+            playRecord()  { this.tone('triangle', [[660, 0]], 0.25, 0.15); this.tone('triangle', [[880, 0]], 0.25, 0.25, 0.12); }
+            playVictory() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => this.tone('triangle', [[f, 0]], 0.25, 0.18, i * 0.11)); }
+        }
+        const audio = new SoundEngine();
+
+        // =========================================================
+        //  KONFIGURATION
+        // =========================================================
+        const W = 600, H = 480;
+        const TILE = 24;
+        const COLS = W / TILE;   // 25
+        const ROWS = H / TILE;   // 20
+        const OPTIONS_PER_QUESTION = 3;
+        const POINTS_CORRECT = 100;
+        const PENALTY_WRONG = 30;
+        const CONFUSED_MS = 4000;
+        const MAX_REPEATS = 2;        // hur många gånger ett missat begrepp får komma tillbaka
+        const REPEAT_GAP = 3;         // antal andra frågor innan det kommer tillbaka
+        const TERM_COLORS = ['#22d3ee', '#ec4899', '#facc15', '#a78bfa'];
+
+        const BONUS_TYPES = {
+            GOLD_APPLE: { type: 'GOLD_APPLE', emoji: '⭐', points: 50, color: '#eab308' },
+            CHILI:      { type: 'CHILI', emoji: '🌶️', points: 15, color: '#ef4444', effectDuration: 6000 },
+            ICE:        { type: 'ICE', emoji: '🧊', points: 15, color: '#06b6d4', effectDuration: 6000 },
+            SHRINK:     { type: 'SHRINK', emoji: '💊', points: 15, color: '#ec4899' }
+        };
+        const EFFECTS = {
+            CHILI:    { emoji: '🌶️', name: 'Chili Turbo', color: '#ef4444' },
+            ICE:      { emoji: '🧊', name: 'Isbit Slomo', color: '#06b6d4' },
+            CONFUSED: { emoji: '😵', name: 'Virrig orm – omvänd styrning', color: '#f43f5e' }
+        };
+
+        const ACHIEVEMENTS = [
+            { id: 'first_right', name: 'Första rätt', desc: 'Välj ditt första rätta begrepp', icon: '✅', unlocked: false },
+            { id: 'streak3', name: 'Tre i rad', desc: 'Tre rätt i rad utan fel', icon: '🔥', unlocked: false },
+            { id: 'streak5', name: 'Begreppsmaskin', desc: 'Fem rätt i rad – maxcombo!', icon: '⚡', unlocked: false },
+            { id: 'comeback', name: 'Comeback', desc: 'Svara rätt direkt på ett begrepp du missat tidigare', icon: '🔁', unlocked: false },
+            { id: 'portal_jump', name: 'Portalhopparen', desc: 'Använd en portal', icon: '🌀', unlocked: false },
+            { id: 'long_snake', name: 'Långis', desc: 'Nå en längd på 15 segment', icon: '🐉', unlocked: false },
+            { id: 'complete', name: 'I mål', desc: 'Klara en hel begreppslista', icon: '🏁', unlocked: false },
+            { id: 'flawless', name: 'Felfri', desc: 'Klara en hel lista utan ett enda felval', icon: '👑', unlocked: false },
+            { id: 'hardcore', name: 'Hardcore', desc: 'Klara en hel lista på Hardcore', icon: '💀', unlocked: false }
+        ];
+
+        // =========================================================
+        //  STATE
+        // =========================================================
+        const state = {
+            running: false, paused: false,
+            listName: '', list: [], queue: [], currentQ: null, totalQ: 0, mastered: 0,
+            repeats: {}, seen: {}, isRepeat: false,
+            score: 0, combo: 1, streak: 0,
+            mistakes: 0, mistakeTerms: {}, firstTry: 0, questionHadMistake: false,
+            boardTop: null, recordBroken: false, scoreSaved: false,
+            snake: [], dir: { x: 1, y: 0 }, dirQueue: [],
+            terms: [], bonus: [], portals: null,
+            activePowerups: {},
+            particles: [], floatingTexts: [], screenShake: 0,
+            lastTickTime: 0, accumulatedTime: 0
+        };
+
+        const $ = id => document.getElementById(id);
+        const canvas = $('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = $('canvasContainer');
+        const powerupBar = $('powerupBar');
+
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+                r = Math.min(r, w / 2, h / 2);
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+            };
+        }
+
+        const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+        const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        // =========================================================
+        //  ANPASSA SPELPLANEN TILL SKÄRMEN (ingen scroll under spel)
+        // =========================================================
+        function fitCanvas() {
+            const r = $('stageWrap').getBoundingClientRect();
+            if (r.width < 10 || r.height < 10) return;
+            let w = r.width, h = w * H / W;
+            if (h > r.height) { h = r.height; w = h * W / H; }
+            canvasContainer.style.width = Math.floor(w) + 'px';
+            canvasContainer.style.height = Math.floor(h) + 'px';
+        }
+        new ResizeObserver(fitCanvas).observe($('stageWrap'));
+        window.addEventListener('resize', fitCanvas);
+
+        // =========================================================
+        //  TOPPLISTA – UI
+        // =========================================================
+        function boardCaption() {
+            const d = DIFFICULTIES[difficulty];
+            return `${$('datasetSelect').value} · ${d.emoji} ${d.label}`;
+        }
+
+        function renderBoard(tbody, data, highlight) {
+            if (!data.length) { tbody.innerHTML = '<tr><td class="text-slate-400">Inga resultat än – bli den första!</td></tr>'; return; }
+            tbody.innerHTML = data.map((s, i) => {
+                const me = highlight && s.name === highlight.name && s.score === highlight.score;
+                return `<tr class="${me ? 'bg-cyan-500/15' : ''}"><td class="w-10">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td><td>${escapeHtml(s.name)}</td><td class="text-right font-orbitron">${s.score}</td></tr>`;
+            }).join('');
+        }
+
+        function renderBoardError(tbody, err) {
+            tbody.innerHTML = `<tr><td class="text-rose-300">Kunde inte hämta topplistan.<br><small class="text-slate-400">${escapeHtml(err.message || err)}</small></td></tr>`;
+        }
+
+        async function refreshBoard(tbodyId, captionId, highlight) {
+            const list = $('datasetSelect').value;
+            const tbody = $(tbodyId);
+            $(captionId).textContent = boardCaption();
+            tbody.innerHTML = '<tr><td class="text-slate-400">Hämtar…</td></tr>';
+            try {
+                const data = await fetchBoard(list, difficulty, 10);
+                renderBoard(tbody, data, highlight);
+                state.boardTop = data.length ? data[0] : null;
+            } catch (err) {
+                renderBoardError(tbody, err);
+                state.boardTop = null;
+            }
+            if (!state.running) updateRecordDisplay();
+        }
+
+        function updateRecordDisplay() {
+            const el = $('highScoreDisplay');
+            if (state.recordBroken) { el.textContent = state.score; el.classList.add('record-hot'); }
+            else { el.textContent = state.boardTop ? state.boardTop.score : '–'; el.classList.remove('record-hot'); }
+        }
+
+        async function openAllScores() {
+            $('allScoresOverlay').classList.remove('hidden');
+            $('allBoardCaption').textContent = boardCaption();
+            const tbody = $('allBoardBody');
+            tbody.innerHTML = '<tr><td class="text-slate-400">Hämtar…</td></tr>';
+            try { renderBoard(tbody, await fetchBoard($('datasetSelect').value, difficulty, 500)); }
+            catch (err) { renderBoardError(tbody, err); }
+        }
+
+        async function saveScore() {
+            const name = $('playerName').value.trim().slice(0, 20);
+            if (!name) { $('saveMsg').textContent = 'Skriv ditt namn för att spara.'; $('playerName').focus(); return; }
+            if (state.scoreSaved) return;
+            $('saveScoreBtn').disabled = true;
+            $('saveMsg').className = 'min-h-[20px] text-sm mb-3 text-slate-400';
+            $('saveMsg').textContent = 'Sparar…';
+            try {
+                await postScore(name, state.score, state.listName, difficulty);
+                state.scoreSaved = true;
+                STORAGE.set('begreppssnake_name', name);
+                $('submitSection').classList.add('hidden');
+                $('saveMsg').className = 'min-h-[20px] text-sm mb-3 text-emerald-400 font-bold';
+                $('saveMsg').textContent = `Sparat! ${state.score} poäng för ${name}.`;
+                refreshBoard('endBoardBody', 'endBoardCaption', { name, score: state.score });
+            } catch (err) {
+                $('saveMsg').className = 'min-h-[20px] text-sm mb-3 text-rose-300';
+                $('saveMsg').textContent = 'Kunde inte spara: ' + (err.message || err);
+            }
+            $('saveScoreBtn').disabled = false;
+        }
+
+        // =========================================================
+        //  MENY & LISTOR
+        // =========================================================
+        function renderDifficulty() {
+            const g = $('difficultyGroup');
+            g.innerHTML = '';
+            Object.entries(DIFFICULTIES).forEach(([key, d]) => {
+                const b = document.createElement('button');
+                b.className = 'diff-btn flex flex-col items-center px-2 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-300 font-bold transition-all hover:border-cyan-500/60';
+                b.setAttribute('aria-pressed', key === difficulty ? 'true' : 'false');
+                b.innerHTML = `<span class="text-xl">${d.emoji}</span><span class="font-orbitron text-xs sm:text-sm">${d.label}</span><span class="text-[11px] text-slate-400 font-semibold">${d.hint}</span>`;
+                b.addEventListener('click', () => {
+                    difficulty = key;
+                    STORAGE.set('begreppssnake_difficulty', key);
+                    renderDifficulty();
+                    refreshBoard('menuBoardBody', 'menuBoardCaption');
+                });
+                g.appendChild(b);
+            });
+        }
+
+        function populateSelect(selectName) {
+            const select = $('datasetSelect');
+            select.innerHTML = '';
+            const data = allDatasets();
+            Object.keys(data).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `${name} (${data[name].length} begrepp)${customDatasets[name] ? ' ★' : ''}`;
+                select.appendChild(opt);
+            });
+            const last = selectName || STORAGE.get('begreppssnake_last_list', null);
+            if (last && data[last]) select.value = last;
+            refreshBoard('menuBoardBody', 'menuBoardCaption');
+        }
+
+        function openCustom() {
+            $('customError').textContent = '';
+            const sel = $('datasetSelect').value;
+            const isCustom = !!customDatasets[sel];
+            $('deleteCustomBtn').classList.toggle('hidden', !isCustom);
+            if (isCustom) {
+                $('customName').value = sel;
+                $('customText').value = customDatasets[sel].map(t => `${t.term} | ${t.def}`).join('\n');
+            }
+            $('customOverlay').classList.remove('hidden');
+            $('customText').focus();
+        }
+        const closeCustom = () => $('customOverlay').classList.add('hidden');
+
+        function parseCustom(text) {
+            const seen = new Set();
+            const list = [];
+            text.split(/\r?\n/).forEach(line => {
+                if (!line.trim()) return;
+                let parts = null;
+                for (const sep of ['|', '\t', ';']) {
+                    const idx = line.indexOf(sep);
+                    if (idx > 0) { parts = [line.slice(0, idx), line.slice(idx + 1)]; break; }
+                }
+                if (!parts) return;
+                const term = parts[0].trim(), def = parts[1].trim();
+                if (term && def && !seen.has(term.toLowerCase())) {
+                    seen.add(term.toLowerCase());
+                    list.push({ term, def });
+                }
+            });
+            return list;
+        }
+
+        function saveCustom() {
+            const name = ($('customName').value.trim() || 'Egen lista').slice(0, 60);
+            const list = parseCustom($('customText').value);
+            if (BUILTIN_DATASETS[name]) { $('customError').textContent = 'Det namnet används redan av en inbyggd lista. Välj ett annat namn.'; return; }
+            if (list.length < 3) {
+                $('customError').textContent = `Hittade ${list.length} giltiga rader. Skriv minst 3, i formatet Begrepp | Förklaring.`;
+                return;
+            }
+            customDatasets[name] = list;
+            STORAGE.set(CUSTOM_KEY, customDatasets);
+            populateSelect(name);
+            closeCustom();
+        }
+
+        function deleteCustom() {
+            const sel = $('datasetSelect').value;
+            if (!customDatasets[sel]) return;
+            delete customDatasets[sel];
+            STORAGE.set(CUSTOM_KEY, customDatasets);
+            populateSelect();
+            closeCustom();
+        }
+
+        // =========================================================
+        //  SPELSTART
+        // =========================================================
+        function startGame() {
+            audio.init();
+            const name = $('datasetSelect').value;
+            const list = allDatasets()[name];
+            if (!list || list.length < 2) return;
+            STORAGE.set('begreppssnake_last_list', name);
+
+            state.listName = name;
+            state.list = list.map(t => ({ ...t }));
+            state.queue = shuffle(state.list);
+            state.totalQ = state.list.length;
+            state.mastered = 0;
+            state.repeats = {}; state.seen = {};
+            state.score = 0; state.combo = 1; state.streak = 0;
+            state.mistakes = 0; state.mistakeTerms = {}; state.firstTry = 0;
+            state.recordBroken = false; state.scoreSaved = false;
+
+            const midY = Math.floor(ROWS / 2);
+            state.snake = [{ x: 5, y: midY }, { x: 4, y: midY }, { x: 3, y: midY }];
+            state.dir = { x: 1, y: 0 };
+            state.dirQueue = [];
+            state.terms = []; state.bonus = []; state.portals = null;
+            state.activePowerups = {};
+            state.particles = []; state.floatingTexts = []; state.screenShake = 0;
+            state.accumulatedTime = 0;
+            canvasContainer.classList.remove('trippy-effect');
+
+            $('scoreDisplay').textContent = '0';
+            $('comboDisplay').textContent = 'x1';
+            $('feedbackLine').textContent = '';
+            updateRecordDisplay();
+            updatePowerupBarUI();
+
+            ['startOverlay', 'endOverlay', 'pauseOverlay'].forEach(id => $(id).classList.add('hidden'));
+            requestAnimationFrame(fitCanvas);
+
+            spawnPortals();
+            nextQuestion();
+            state.paused = false;
+            state.running = true;
+        }
+
+        function updateProgress() {
+            $('progressDisplay').textContent = `${state.mastered}/${state.totalQ}`;
+        }
+
+        function nextQuestion() {
+            if (state.queue.length === 0) { victory(); return; }
+            const q = state.queue.shift();
+            state.currentQ = q;
+            state.isRepeat = !!state.seen[q.term];
+            state.seen[q.term] = true;
+            state.questionHadMistake = false;
+
+            $('questionText').textContent = `”${q.def}”`;
+            $('questionLabel').textContent = state.isRepeat ? '🔁 Repetition – det här missade du tidigare' : 'Vilket begrepp förklaras?';
+            $('questionLabel').className = state.isRepeat
+                ? 'text-[11px] sm:text-xs text-pink-400 font-bold tracking-wider'
+                : 'text-[11px] sm:text-xs text-yellow-500/80 font-bold tracking-wider';
+            const box = $('questionBox');
+            box.classList.toggle('neon-box-repeat', state.isRepeat);
+            box.classList.remove('q-flash'); void box.offsetWidth; box.classList.add('q-flash');
+            updateProgress();
+            spawnTerms();
+        }
+
+        // =========================================================
+        //  PLACERING PÅ SPELPLANEN
+        // =========================================================
+        const termAt = (x, y) => state.terms.find(t => t.y === y && x >= t.x && x < t.x + t.w);
+        function isPortal(x, y) {
+            const p = state.portals;
+            return p && ((p.a.x === x && p.a.y === y) || (p.b.x === x && p.b.y === y));
+        }
+        function cellBusy(x, y) {
+            return state.snake.some(s => s.x === x && s.y === y) ||
+                   !!termAt(x, y) ||
+                   state.bonus.some(b => b.x === x && b.y === y) ||
+                   isPortal(x, y);
+        }
+
+        function findPillPos(w) {
+            const head = state.snake[0];
+            for (let margin = 1; margin >= 0; margin--) {
+                for (let a = 0; a < 400; a++) {
+                    const x = 1 + Math.floor(Math.random() * Math.max(1, COLS - w - 1));
+                    const y = 1 + Math.floor(Math.random() * (ROWS - 2));
+                    let ok = true;
+                    for (let cy = y - margin; cy <= y + margin && ok; cy++) {
+                        for (let cx = x - margin; cx < x + w + margin && ok; cx++) {
+                            if (cellBusy(cx, cy)) ok = false;
+                        }
+                    }
+                    if (!ok) continue;
+                    let near = false;
+                    for (let cx = x; cx < x + w; cx++) {
+                        if (Math.abs(cx - head.x) + Math.abs(y - head.y) < 5) { near = true; break; }
+                    }
+                    if (margin > 0 && near) continue;
+                    return { x, y };
+                }
+            }
+            return { x: 1, y: 1 };
+        }
+
+        function getRandomFreePos() {
+            for (let a = 0; a < 300; a++) {
+                const pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+                if (!cellBusy(pos.x, pos.y)) return pos;
+            }
+            return null;
+        }
+
+        const TERM_FONT_SIZE = 16;
+        const termFont = size => `700 ${size}px Rajdhani, 'Segoe UI', sans-serif`;
+
+        function spawnTerms() {
+            state.terms = [];
+            const q = state.currentQ;
+            const others = shuffle(state.list.filter(t => t.term !== q.term)).slice(0, OPTIONS_PER_QUESTION - 1);
+            const options = shuffle([q, ...others]);
+            const colors = shuffle(TERM_COLORS);
+
+            options.forEach((t, i) => {
+                let size = canvasContainer.clientWidth < 450 ? 21 : TERM_FONT_SIZE; // större text på mobil
+                ctx.font = termFont(size);
+                let textW = ctx.measureText(t.term).width;
+                const maxPx = (COLS - 2) * TILE - 16;
+                while (textW > maxPx && size > 10) { size--; ctx.font = termFont(size); textW = ctx.measureText(t.term).width; }
+                const w = Math.min(COLS - 2, Math.max(2, Math.ceil((textW + 18) / TILE)));
+                const pos = findPillPos(w);
+                state.terms.push({
+                    term: t.term, def: t.def, correct: t.term === q.term,
+                    x: pos.x, y: pos.y, w, fontSize: size,
+                    color: colors[i % colors.length], phase: Math.random() * Math.PI * 2,
+                    born: Date.now()
+                });
+            });
+        }
+
+        function spawnBonusItem() {
+            const r = Math.random();
+            const type = r < 0.35 ? BONUS_TYPES.GOLD_APPLE : r < 0.6 ? BONUS_TYPES.CHILI : r < 0.85 ? BONUS_TYPES.ICE : BONUS_TYPES.SHRINK;
+            const pos = getRandomFreePos();
+            if (pos) state.bonus.push({ ...type, x: pos.x, y: pos.y, expiresAt: Date.now() + 8000 });
+        }
+
+        function spawnPortals() {
+            state.portals = null;
+            const a = getRandomFreePos();
+            let b = null;
+            for (let i = 0; i < 50; i++) {
+                b = getRandomFreePos();
+                if (b && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) > 8) break;
+            }
+            if (a && b) state.portals = { a, b };
+        }
+
+        // =========================================================
+        //  PARTIKLAR & FLYTANDE TEXT
+        // =========================================================
+        function createExplosionPx(px, py, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 4;
+                state.particles.push({
+                    x: px, y: py, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    color, size: 2 + Math.random() * 4, alpha: 1, decay: 0.02 + Math.random() * 0.03
+                });
+            }
+        }
+        const createExplosion = (gx, gy, color, count = 12) => createExplosionPx(gx * TILE + TILE / 2, gy * TILE + TILE / 2, color, count);
+        function createFloatingTextPx(text, px, py, color = '#38bdf8') {
+            px = Math.max(80, Math.min(W - 80, px));
+            py = Math.max(24, py);
+            state.floatingTexts.push({ text, x: px, y: py, vy: -1.2, alpha: 1, color });
+        }
+        const createFloatingText = (text, gx, gy, color) => createFloatingTextPx(text, gx * TILE + TILE / 2, gy * TILE + TILE / 2, color);
+
+        // =========================================================
+        //  EFFEKTER
+        // =========================================================
+        function activatePowerup(type, duration) {
+            state.activePowerups[type] = Date.now() + duration;
+            if (type === 'CONFUSED') canvasContainer.classList.add('trippy-effect');
+            if (type === 'CHILI') delete state.activePowerups.ICE;
+            if (type === 'ICE') delete state.activePowerups.CHILI;
+            updatePowerupBarUI();
+        }
+        function checkExpiredPowerups() {
+            const now = Date.now();
+            for (const type in state.activePowerups) {
+                if (now > state.activePowerups[type]) {
+                    delete state.activePowerups[type];
+                    if (type === 'CONFUSED') canvasContainer.classList.remove('trippy-effect');
+                }
+            }
+        }
+        let lastBarRender = '';
+        function updatePowerupBarUI() {
+            const now = Date.now();
+            let html = '';
+            for (const type in state.activePowerups) {
+                const sec = Math.max(0, Math.ceil((state.activePowerups[type] - now) / 1000));
+                const cfg = EFFECTS[type];
+                html += `<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 border text-xs font-bold animate-pulse" style="border-color:${cfg.color}">
+                    <span>${cfg.emoji}</span> <span style="color:${cfg.color}">${cfg.name}</span> <span class="text-slate-400 font-mono">(${sec}s)</span></div>`;
+            }
+            if (html !== lastBarRender) { powerupBar.innerHTML = html; lastBarRender = html; }
+        }
+
+        // =========================================================
+        //  UTMÄRKELSER
+        // =========================================================
+        function unlockAchievement(id) {
+            const ach = ACHIEVEMENTS.find(a => a.id === id);
+            if (ach && !ach.unlocked) {
+                ach.unlocked = true;
+                createFloatingTextPx(`🏅 ${ach.name}!`, W / 2, 70, '#facc15');
+                renderAchievements();
+            }
+        }
+        function renderAchievements() {
+            $('achievementsContainer').innerHTML = ACHIEVEMENTS.map(ach =>
+                `<div title="${escapeHtml(ach.desc)}" class="flex items-center gap-1 px-2 py-1 rounded text-xs border ${ach.unlocked
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 font-semibold'
+                    : 'bg-slate-950/40 border-slate-800 text-slate-600 opacity-60'}"><span>${ach.icon}</span> <span>${ach.name}</span></div>`
+            ).join('');
+        }
+
+        // =========================================================
+        //  POÄNG & LIVE-REKORD
+        // =========================================================
+        function addScore(points) {
+            state.score = Math.max(0, state.score + points);
+            $('scoreDisplay').textContent = state.score;
+            if (state.boardTop && !state.recordBroken && state.score > state.boardTop.score) {
+                state.recordBroken = true;
+                audio.playRecord();
+                createFloatingTextPx(`🔥 NYTT REKORD! Du slog ${state.boardTop.name}!`, W / 2, 110, '#f43f5e');
+                state.screenShake = Math.max(state.screenShake, 6);
+            }
+            if (state.recordBroken) updateRecordDisplay();
+        }
+
+        // =========================================================
+        //  SPELSTEG
+        // =========================================================
+        const wrap = p => ({ x: (p.x + COLS) % COLS, y: (p.y + ROWS) % ROWS });
+
+        function handleCorrect(term) {
+            const cx = (term.x + term.w / 2) * TILE, cy = term.y * TILE + TILE / 2;
+            const q = state.currentQ;
+            state.streak++;
+            state.combo = Math.min(5, state.streak);
+            $('comboDisplay').textContent = `x${state.combo}`;
+            const pts = POINTS_CORRECT * state.combo * (state.activePowerups.CHILI ? 2 : 1);
+            addScore(pts);
+
+            if (!state.isRepeat && !state.questionHadMistake) state.firstTry++;
+            if (state.isRepeat && !state.questionHadMistake) unlockAchievement('comeback');
+
+            // Frågeordning: ett begrepp som krävde fel försök kommer tillbaka senare
+            const reps = state.repeats[q.term] || 0;
+            let comesBack = false;
+            if (state.questionHadMistake && reps < MAX_REPEATS) {
+                state.repeats[q.term] = reps + 1;
+                state.queue.splice(Math.min(REPEAT_GAP, state.queue.length), 0, q);
+                comesBack = true;
+            } else {
+                state.mastered++;
+            }
+
+            audio.playCorrect();
+            createExplosionPx(cx, cy, '#4ade80', 30);
+            createExplosionPx(cx, cy, term.color, 12);
+            createFloatingTextPx(`+${pts} RÄTT!`, cx, cy, '#4ade80');
+            $('feedbackLine').innerHTML = `<span class="text-emerald-400 font-bold">✔ Rätt: ${escapeHtml(term.term)}</span>` +
+                (comesBack ? ' <span class="text-pink-300">– det kommer tillbaka lite senare 🔁</span>' : '');
+
+            unlockAchievement('first_right');
+            if (state.streak >= 3) unlockAchievement('streak3');
+            if (state.streak >= 5) unlockAchievement('streak5');
+
+            state.terms = [];
+            if (Math.random() < 0.35) spawnBonusItem();
+            nextQuestion();
+        }
+
+        function handleWrong(term) {
+            const cx = (term.x + term.w / 2) * TILE, cy = term.y * TILE + TILE / 2;
+            const q = state.currentQ;
+            state.streak = 0; state.combo = 1;
+            $('comboDisplay').textContent = 'x1';
+            state.mistakes++;
+            state.questionHadMistake = true;
+            state.mistakeTerms[q.term] = (state.mistakeTerms[q.term] || 0) + 1;
+            addScore(-PENALTY_WRONG);
+
+            audio.playWrong();
+            state.screenShake = 12;
+            createExplosionPx(cx, cy, '#f43f5e', 22);
+            createFloatingTextPx(`FEL! −${PENALTY_WRONG}`, cx, cy, '#f43f5e');
+            $('feedbackLine').innerHTML = `<span class="text-rose-400 font-bold">✖ ${escapeHtml(term.term)}</span> <span class="text-slate-300">betyder: ${escapeHtml(term.def)}</span>`;
+            activatePowerup('CONFUSED', CONFUSED_MS);
+            state.dirQueue = [];
+            spawnTerms();
+        }
+
+        function step() {
+            if (!state.running || state.paused) return;
+            if (state.dirQueue.length) state.dir = state.dirQueue.shift();
+
+            const head = state.snake[0];
+            let newHead = wrap({ x: head.x + state.dir.x, y: head.y + state.dir.y });
+
+            if (state.portals) {
+                const { a, b } = state.portals;
+                let from = null, to = null, col = null;
+                if (newHead.x === a.x && newHead.y === a.y) { from = a; to = b; col = '#ec4899'; }
+                else if (newHead.x === b.x && newHead.y === b.y) { from = b; to = a; col = '#3b82f6'; }
+                if (from) {
+                    newHead = wrap({ x: to.x + state.dir.x, y: to.y + state.dir.y });
+                    createExplosion(from.x, from.y, '#3b82f6', 15);
+                    createExplosion(to.x, to.y, '#ec4899', 15);
+                    audio.playPortal();
+                    createFloatingText('PORTAL!', to.x, to.y, col);
+                    unlockAchievement('portal_jump');
+                }
+            }
+
+            const hitIdx = state.snake.findIndex((s, i) => i > 0 && i < state.snake.length - 1 && s.x === newHead.x && s.y === newHead.y);
+            if (hitIdx !== -1) {
+                state.snake.slice(hitIdx).forEach(s => createExplosion(s.x, s.y, '#f97316', 4));
+                state.snake = state.snake.slice(0, Math.max(3, hitIdx));
+                state.screenShake = 8;
+                audio.playBite();
+                createFloatingText('AJ! Svansen!', newHead.x, newHead.y, '#f97316');
+            }
+
+            state.snake.unshift(newHead);
+            let grow = false;
+
+            const term = termAt(newHead.x, newHead.y);
+            if (term) {
+                if (term.correct) { grow = true; handleCorrect(term); }
+                else handleWrong(term);
+            }
+
+            const bIdx = state.bonus.findIndex(b => b.x === newHead.x && b.y === newHead.y);
+            if (bIdx !== -1) {
+                const item = state.bonus.splice(bIdx, 1)[0];
+                grow = true;
+                const pts = item.points * (state.activePowerups.CHILI ? 2 : 1);
+                addScore(pts);
+                createExplosion(newHead.x, newHead.y, item.color);
+                createFloatingText(`+${pts}`, newHead.x, newHead.y, item.color);
+                if (item.type === 'GOLD_APPLE') { audio.playPowerup(); state.screenShake = 5; }
+                else if (item.type === 'CHILI') { audio.playPowerup(); activatePowerup('CHILI', item.effectDuration); }
+                else if (item.type === 'ICE') { audio.playPowerup(); activatePowerup('ICE', item.effectDuration); }
+                else if (item.type === 'SHRINK') {
+                    audio.playEat();
+                    grow = false;
+                    for (let i = 0; i < 3 && state.snake.length > 4; i++) state.snake.pop();
+                    createFloatingText('KRYMP!', newHead.x, newHead.y, '#ec4899');
+                }
+            }
+
+            if (!grow) state.snake.pop();
+            if (state.snake.length >= 15) unlockAchievement('long_snake');
+
+            const now = Date.now();
+            state.bonus = state.bonus.filter(b => {
+                if (now > b.expiresAt) { createExplosion(b.x, b.y, '#64748b', 6); return false; }
+                return true;
+            });
+        }
+
+        // =========================================================
+        //  SLUT
+        // =========================================================
+        function victory() {
+            state.running = false;
+            state.terms = [];
+            state.mastered = state.totalQ;
+            updateProgress();
+            $('questionText').textContent = 'Alla begrepp klarade! 🎉';
+            $('questionLabel').textContent = 'Snyggt jobbat';
+            $('questionBox').classList.remove('neon-box-repeat');
+            audio.playVictory();
+            state.screenShake = 10;
+            for (let i = 0; i < 8; i++) createExplosionPx(Math.random() * W, Math.random() * H, TERM_COLORS[i % TERM_COLORS.length], 20);
+            unlockAchievement('complete');
+            if (state.mistakes === 0) unlockAchievement('flawless');
+            if (difficulty === 'hardcore') unlockAchievement('hardcore');
+            canvasContainer.classList.remove('trippy-effect');
+            state.activePowerups = {};
+            updatePowerupBarUI();
+            setTimeout(() => showEnd(true), 900);
+        }
+
+        function showEnd(won) {
+            const d = DIFFICULTIES[difficulty];
+            $('endIcon').textContent = won ? (state.mistakes === 0 ? '👑' : '🏆') : '⏹️';
+            $('endTitle').textContent = won ? 'ALLA BEGREPP KLARADE!' : 'SPELET AVSLUTAT';
+            $('endReason').textContent = won
+                ? (state.mistakes === 0 ? `Felfritt! Du kunde alla ${state.totalQ} begrepp.` : `Du tog dig igenom alla ${state.totalQ} begrepp.`)
+                : `Du klarade ${state.mastered} av ${state.totalQ} begrepp.`;
+            $('finalScore').textContent = state.score;
+            $('finalDifficulty').textContent = `${d.emoji} ${d.label}`;
+            $('finalFirstTry').textContent = `${state.firstTry}/${state.totalQ}`;
+            $('finalMistakes').textContent = state.mistakes;
+
+            // Topplista: bara fullständiga omgångar kan sparas
+            const canSave = won && state.score > 0;
+            $('submitSection').classList.toggle('hidden', !canSave);
+            $('saveMsg').className = 'min-h-[20px] text-sm mb-3 text-slate-400';
+            $('saveMsg').textContent = won ? (state.score > 0 ? '' : 'Inga poäng att spara den här gången.') : 'Klara hela listan för att kunna spara på topplistan.';
+            $('playerName').value = STORAGE.get('begreppssnake_name', '');
+
+            const practice = Object.keys(state.mistakeTerms);
+            $('practiceList').innerHTML = practice.map(termName => {
+                const t = state.list.find(x => x.term === termName);
+                return `<li><strong class="text-pink-300">${escapeHtml(termName)}</strong> <span class="text-slate-500">(${state.mistakeTerms[termName]} fel)</span><br><span class="text-slate-400">${escapeHtml(t ? t.def : '')}</span></li>`;
+            }).join('');
+            $('practiceBox').classList.toggle('hidden', practice.length === 0);
+
+            $('endOverlay').classList.remove('hidden');
+            refreshBoard('endBoardBody', 'endBoardCaption');
+            if (canSave) setTimeout(() => $('playerName').focus(), 50);
+        }
+
+        function quitToMenu() {
+            const wasRunning = state.running;
+            state.running = false;
+            state.paused = false;
+            canvasContainer.classList.remove('trippy-effect');
+            state.activePowerups = {};
+            updatePowerupBarUI();
+            ['pauseOverlay', 'endOverlay'].forEach(id => $(id).classList.add('hidden'));
+            if (wasRunning && state.mastered > 0) { showEnd(false); return; }
+            showMenu();
+        }
+
+        function showMenu() {
+            $('endOverlay').classList.add('hidden');
+            $('startOverlay').classList.remove('hidden');
+            $('questionText').textContent = 'Välj en begreppslista och starta spelet.';
+            $('questionLabel').textContent = 'Vilket begrepp förklaras?';
+            $('questionBox').classList.remove('neon-box-repeat');
+            $('feedbackLine').textContent = '';
+            state.recordBroken = false;
+            refreshBoard('menuBoardBody', 'menuBoardCaption');
+        }
+
+        // =========================================================
+        //  RENDERING
+        // =========================================================
+        function drawPill(t, time) {
+            const bob = Math.sin(time * 0.004 + t.phase) * 2;
+            const age = Math.min(1, (Date.now() - t.born) / 250);
+            const px = t.x * TILE + 1, py = t.y * TILE + 1 + bob;
+            const w = t.w * TILE - 2, h = TILE - 2;
+
+            ctx.save();
+            ctx.globalAlpha = age;
+            ctx.translate(px + w / 2, py + h / 2);
+            ctx.scale(0.7 + 0.3 * age, 0.7 + 0.3 * age);
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = t.color;
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+            ctx.beginPath();
+            ctx.roundRect(-w / 2, -h / 2, w, h, 8);
+            ctx.fill();
+            ctx.strokeStyle = t.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = termFont(t.fontSize);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(t.term, 0, 1);
+            ctx.restore();
+        }
+
+        function draw() {
+            const time = Date.now();
+            ctx.save();
+
+            if (state.screenShake > 0) {
+                ctx.translate((Math.random() - 0.5) * state.screenShake * 2, (Math.random() - 0.5) * state.screenShake * 2);
+                state.screenShake *= 0.85;
+                if (state.screenShake < 0.2) state.screenShake = 0;
+            }
+
+            ctx.fillStyle = '#0b0f19';
+            ctx.fillRect(-20, -20, W + 40, H + 40);
+
+            ctx.strokeStyle = 'rgba(30, 41, 59, 0.55)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= COLS; i++) { ctx.beginPath(); ctx.moveTo(i * TILE, 0); ctx.lineTo(i * TILE, H); ctx.stroke(); }
+            for (let j = 0; j <= ROWS; j++) { ctx.beginPath(); ctx.moveTo(0, j * TILE); ctx.lineTo(W, j * TILE); ctx.stroke(); }
+
+            ctx.save();
+            ctx.strokeStyle = `rgba(56, 189, 248, ${0.15 + Math.sin(time * 0.003) * 0.08})`;
+            ctx.setLineDash([6, 8]);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, W - 2, H - 2);
+            ctx.restore();
+
+            if (state.portals) {
+                const rot = time * 0.005, radius = TILE * 0.45;
+                [[state.portals.a, '#06b6d4', 1], [state.portals.b, '#ec4899', -1]].forEach(([p, col, d]) => {
+                    ctx.save();
+                    ctx.translate(p.x * TILE + TILE / 2, p.y * TILE + TILE / 2);
+                    ctx.rotate(rot * d);
+                    ctx.shadowBlur = 15; ctx.shadowColor = col; ctx.strokeStyle = col; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 1.5); ctx.stroke();
+                    ctx.restore();
+                });
+            }
+
+            state.bonus.forEach(item => {
+                ctx.save();
+                if (item.expiresAt - time < 2000 && Math.floor(time / 150) % 2 === 0) ctx.globalAlpha = 0.35;
+                ctx.shadowBlur = 10; ctx.shadowColor = item.color;
+                ctx.font = `${TILE * 0.8}px sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const scale = 1 + Math.sin(time * 0.008) * 0.1;
+                ctx.translate(item.x * TILE + TILE / 2, item.y * TILE + TILE / 2);
+                ctx.scale(scale, scale);
+                ctx.fillText(item.emoji, 0, 1);
+                ctx.restore();
+            });
+
+            state.terms.forEach(t => drawPill(t, time));
+
+            const confused = !!state.activePowerups.CONFUSED;
+            const chili = !!state.activePowerups.CHILI;
+            const ice = !!state.activePowerups.ICE;
+            for (let idx = state.snake.length - 1; idx >= 0; idx--) {
+                const seg = state.snake[idx];
+                const px = seg.x * TILE, py = seg.y * TILE;
+                const isHead = idx === 0;
+                ctx.save();
+                if (isHead) {
+                    ctx.fillStyle = confused ? '#a855f7' : chili ? '#ef4444' : ice ? '#67e8f9' : '#00f0ff';
+                    ctx.shadowBlur = 15;
+                } else {
+                    const alpha = 1 - (idx / state.snake.length) * 0.6;
+                    ctx.fillStyle = confused ? `rgba(168, 85, 247, ${alpha})`
+                                  : chili ? `rgba(239, 68, 68, ${alpha})`
+                                  : ice ? `rgba(103, 232, 249, ${alpha})`
+                                  : `rgba(16, 185, 129, ${alpha})`;
+                    ctx.shadowBlur = 5;
+                }
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.beginPath();
+                ctx.roundRect(px + 1, py + 1, TILE - 2, TILE - 2, isHead ? 8 : 5);
+                ctx.fill();
+
+                if (isHead) {
+                    const cx = px + TILE / 2, cy = py + TILE / 2;
+                    const f = state.dir, s = { x: -state.dir.y, y: state.dir.x };
+                    const fwd = TILE * 0.16, side = TILE * 0.22;
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(cx + f.x * fwd + s.x * side, cy + f.y * fwd + s.y * side, 3, 0, Math.PI * 2);
+                    ctx.arc(cx + f.x * fwd - s.x * side, cy + f.y * fwd - s.y * side, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (confused) {
+                        ctx.font = `${TILE * 0.6}px sans-serif`;
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.translate(cx, py - 6);
+                        ctx.rotate(time * 0.01);
+                        ctx.fillText('💫', 0, 0);
+                    }
+                }
+                ctx.restore();
+            }
+
+            state.particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+                if (p.alpha > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                }
+            });
+            state.particles = state.particles.filter(p => p.alpha > 0);
+
+            state.floatingTexts.forEach(ft => {
+                ft.y += ft.vy; ft.alpha -= 0.016;
+                if (ft.alpha > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, ft.alpha);
+                    ctx.font = "bold 16px Orbitron, 'Segoe UI', sans-serif";
+                    ctx.fillStyle = ft.color; ctx.shadowBlur = 8; ctx.shadowColor = ft.color;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                    ctx.restore();
+                }
+            });
+            state.floatingTexts = state.floatingTexts.filter(ft => ft.alpha > 0);
+
+            ctx.restore();
+        }
+
+        // =========================================================
+        //  SPELLOOP (delta time)
+        // =========================================================
+        function gameLoop(timestamp) {
+            if (!state.lastTickTime) state.lastTickTime = timestamp;
+            const delta = Math.min(250, timestamp - state.lastTickTime);
+            state.lastTickTime = timestamp;
+
+            if (state.running && !state.paused) {
+                state.accumulatedTime += delta;
+                const d = DIFFICULTIES[difficulty];
+                const speed = state.activePowerups.CHILI ? d.chili : state.activePowerups.ICE ? d.ice : d.base;
+                if (state.accumulatedTime >= speed) {
+                    step();
+                    state.accumulatedTime = Math.min(state.accumulatedTime - speed, speed);
+                }
+                checkExpiredPowerups();
+                updatePowerupBarUI();
+            }
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // =========================================================
+        //  STYRNING
+        // =========================================================
+        function handleDirectionInput(dx, dy) {
+            if (!state.running || state.paused) return;
+            if (state.activePowerups.CONFUSED) { dx = -dx; dy = -dy; }
+            const last = state.dirQueue.length ? state.dirQueue[state.dirQueue.length - 1] : state.dir;
+            if ((dx !== 0 && last.x === 0) || (dy !== 0 && last.y === 0)) {
+                if (state.dirQueue.length < 2) state.dirQueue.push({ x: dx, y: dy });
+            }
+        }
+
+        function togglePause() {
+            if (!state.running) return;
+            state.paused = !state.paused;
+            $('pauseOverlay').classList.toggle('hidden', !state.paused);
+        }
+
+        const isOpen = id => !$(id).classList.contains('hidden');
+
+        window.addEventListener('keydown', e => {
+            if (isOpen('customOverlay')) { if (e.key === 'Escape') closeCustom(); return; }
+            if (isOpen('allScoresOverlay')) { if (e.key === 'Escape') $('allScoresOverlay').classList.add('hidden'); return; }
+            if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                if (e.key === 'Enter' && document.activeElement.id === 'playerName') saveScore();
+                return;
+            }
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+            audio.init();
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W': handleDirectionInput(0, -1); break;
+                case 'ArrowDown': case 's': case 'S': handleDirectionInput(0, 1); break;
+                case 'ArrowLeft': case 'a': case 'A': handleDirectionInput(-1, 0); break;
+                case 'ArrowRight': case 'd': case 'D': handleDirectionInput(1, 0); break;
+                case 'p': case 'P': case 'Escape': togglePause(); break;
+                case 'Enter':
+                    if (isOpen('startOverlay') && !['BUTTON', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); startGame(); }
+                    break;
+            }
+        });
+
+        [['btnUp', 0, -1], ['btnDown', 0, 1], ['btnLeft', -1, 0], ['btnRight', 1, 0]].forEach(([id, dx, dy]) => {
+            $(id).addEventListener('pointerdown', e => { e.preventDefault(); audio.init(); handleDirectionInput(dx, dy); });
+        });
+
+        let touchStartX = 0, touchStartY = 0;
+        canvas.addEventListener('touchstart', e => {
+            audio.init();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        canvas.addEventListener('touchmove', e => { if (state.running) e.preventDefault(); }, { passive: false });
+        canvas.addEventListener('touchend', e => {
+            if (!touchStartX && !touchStartY) return;
+            const dX = e.changedTouches[0].clientX - touchStartX;
+            const dY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(dX) > Math.abs(dY)) { if (Math.abs(dX) > 20) handleDirectionInput(dX > 0 ? 1 : -1, 0); }
+            else if (Math.abs(dY) > 20) handleDirectionInput(0, dY > 0 ? 1 : -1);
+            touchStartX = 0; touchStartY = 0;
+        }, { passive: true });
+
+        $('startBtn').addEventListener('click', startGame);
+        $('restartBtn').addEventListener('click', startGame);
+        $('menuBtn').addEventListener('click', showMenu);
+        $('quitBtn').addEventListener('click', quitToMenu);
+        $('resumeBtn').addEventListener('click', () => { audio.init(); togglePause(); });
+        $('openCustomBtn').addEventListener('click', openCustom);
+        $('cancelCustomBtn').addEventListener('click', closeCustom);
+        $('saveCustomBtn').addEventListener('click', saveCustom);
+        $('deleteCustomBtn').addEventListener('click', deleteCustom);
+        $('saveScoreBtn').addEventListener('click', saveScore);
+        $('closeAllBtn').addEventListener('click', () => $('allScoresOverlay').classList.add('hidden'));
+        document.querySelectorAll('.showAllBtn').forEach(b => b.addEventListener('click', openAllScores));
+        $('datasetSelect').addEventListener('change', () => refreshBoard('menuBoardBody', 'menuBoardCaption'));
+        $('soundToggleBtn').addEventListener('click', () => {
+            audio.init();
+            audio.muted = !audio.muted;
+            $('soundToggleBtn').textContent = audio.muted ? '🔇' : '🔊';
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.running && !state.paused) togglePause();
+        });
+
+        // Init
+        renderDifficulty();
+        populateSelect();
+        renderAchievements();
+        fitCanvas();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

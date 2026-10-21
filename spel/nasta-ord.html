@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nästa ord – DLG Arcade</title>
+<style>
+@font-face{font-family:"Inria Serif";font-style:normal;font-weight:400;font-display:swap;src:url("../assets/fonts/InriaSerif-400-normal.woff2") format("woff2");}
+@font-face{font-family:"Inria Serif";font-style:italic;font-weight:400;font-display:swap;src:url("../assets/fonts/InriaSerif-400-italic.woff2") format("woff2");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:300 900;font-display:swap;src:url("../assets/fonts/Inter-300-900-normal.woff2") format("woff2");}
+:root{
+  --navy:#363B68;--sky:#C9E0EE;--yellow:#F7D563;--cream:#F8EAA4;--red:#A43033;--pink:#F1D9EA;
+  --forest:#205B4F;--mint:#E1EFE3;--black:#242422;--slate:#484F59;--grey:#C8CACD;--grey-500:#767B82;
+  --sans:"Inter",Arial,Helvetica,sans-serif;--serif:"Inria Serif",Georgia,serif;--ease:cubic-bezier(.2,0,0,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--navy);color:#fff;font-family:var(--sans);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.app{max-width:880px;margin:0 auto;padding:28px 20px 40px;min-height:100vh;display:flex;flex-direction:column;gap:22px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-weight:900;font-size:22px;letter-spacing:-.03em}
+.logo span{color:var(--yellow)}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 14px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat b{color:var(--yellow);font-weight:800}
+.screen{display:flex;flex-direction:column;gap:22px}
+[hidden]{display:none!important}
+
+h1{margin:0;font-size:clamp(44px,8vw,76px);line-height:.92;font-weight:900;letter-spacing:-.045em}
+h1 span{color:var(--yellow)}
+.lead{font-family:var(--serif);font-size:clamp(20px,2.6vw,26px);line-height:1.3;color:var(--cream);margin:0;max-width:640px}
+.box{background:#fff;color:var(--black);padding:22px 24px;display:flex;flex-direction:column;gap:10px}
+.box h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.box ol{margin:0;padding-left:22px;display:grid;gap:6px}
+.small{font-size:14px;color:var(--slate)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 26px;font-size:18px;font-weight:700;border:2px solid var(--yellow);border-radius:4px;background:var(--yellow);color:var(--black);transition:background 120ms var(--ease)}
+.btn:hover{background:var(--cream);border-color:var(--cream)}
+.btn.ghost{background:transparent;color:#fff;border-color:#fff}
+.btn.ghost:hover{background:rgba(255,255,255,.1)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* Runda */
+.progress{height:6px;background:rgba(255,255,255,.18);display:flex;gap:4px}
+.progress i{flex:1;background:rgba(255,255,255,.18)}
+.progress i.done{background:var(--yellow)}
+.prompt-card{background:var(--yellow);color:var(--black);padding:16px}
+.prompt-card .ticks{display:flex;gap:6px;margin-bottom:14px}
+.prompt-card .ticks span{flex:1;height:8px;background:rgba(36,36,34,.18)}
+.prompt{background:#fff;padding:26px 24px;min-height:150px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.prompt .kicker{font-size:14px;font-weight:600;color:var(--slate)}
+.prompt .text{font-family:var(--serif);font-size:clamp(26px,4.2vw,40px);line-height:1.15}
+.blank{display:inline-block;min-width:3.2ch;border-bottom:4px solid var(--navy);color:var(--navy);font-style:italic;animation:blink 1.1s steps(2) infinite}
+.blank.filled{animation:none}
+@keyframes blink{50%{border-color:transparent}}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.opt{display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 16px;background:#fff;color:var(--black);border:3px solid #fff;border-radius:4px;font-size:20px;font-weight:700;text-align:left;transition:transform 160ms var(--ease),background 120ms}
+.opt:hover:not(:disabled){transform:translateY(-3px);background:var(--sky);border-color:var(--sky)}
+.opt .k{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;background:var(--navy);color:#fff}
+.opt:disabled{cursor:default}
+.opt.picked{border-color:var(--yellow);box-shadow:0 0 0 3px var(--black) inset}
+.opt.dim{opacity:.55}
+
+/* Facit */
+.reveal{background:#fff;color:var(--black);padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.verdict{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.verdict h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.02em}
+.gain{font-family:var(--serif);font-size:40px;line-height:1;color:var(--red)}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(90px,30%) 1fr 54px;gap:10px;align-items:center;font-size:16px}
+.bar .w{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .track{height:22px;background:#EEF0F2;position:relative}
+.bar .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--sky);transition:width 600ms var(--ease)}
+.bar.top .fill{background:var(--navy)}
+.bar.mine .w::after{content:" ← du";font-weight:600;color:var(--red)}
+.bar.rest .w{font-weight:500;color:var(--slate)}
+.bar .p{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.lesson{border-left:4px solid var(--yellow);background:#FBF6DD;padding:12px 14px;font-size:16px}
+.lesson b{font-weight:800}
+
+/* Slut */
+.final{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.final .box{flex:1 1 360px}
+.big-score{font-family:var(--serif);font-size:72px;line-height:1;color:var(--red)}
+.save{display:flex;gap:10px;flex-wrap:wrap}
+.save input{flex:1 1 180px;height:52px;padding:0 14px;border:2px solid var(--black);border-radius:4px;font:inherit;font-size:18px}
+.msg{font-size:15px;min-height:1.4em}
+.msg.err{color:var(--red);font-weight:600}
+.hs{flex:0 1 300px;min-width:260px;background:var(--yellow);color:var(--black);padding:22px 24px;display:flex;flex-direction:column;gap:4px}
+.hs h2{margin:0 0 8px;font-size:22px;font-weight:900}
+.hs .r{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(36,36,34,.2)}
+.hs .r .n{font-family:var(--serif);font-size:24px;color:var(--red);line-height:1}
+.hs .r .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs .r .s{font-weight:900;font-variant-numeric:tabular-nums}
+.hs .r.me{background:rgba(255,255,255,.45)}
+.insights{margin:0;padding-left:20px;display:grid;gap:8px}
+
+@media (max-width:560px){
+  .app{padding:18px 14px 28px;gap:18px}
+  .opts{grid-template-columns:1fr}
+  .opt{min-height:56px;font-size:18px}
+  .prompt{padding:20px 16px;min-height:120px}
+  .reveal,.box{padding:18px 16px}
+  .bar{grid-template-columns:minmax(80px,34%) 1fr 46px;font-size:15px}
+  .hs{flex-basis:100%;min-width:0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">Nästa <span>ord</span></div>
+    <div class="stats" id="stats" hidden>
+      <span class="stat">Runda <b id="s-round">1</b>/<span id="s-total">10</span></span>
+      <span class="stat">Poäng <b id="s-score">0</b></span>
+      <span class="stat">Svit <b id="s-streak">0</b></span>
+    </div>
+  </div>
+
+  <!-- START -->
+  <section class="screen" id="scr-start">
+    <h1>Tänk som<br><span>en AI.</span></h1>
+    <p class="lead">En språkmodell skriver ett ord i taget. Varje gång väljer den det ord som <em>brukar</em> komma härnäst. Kan du gissa vilket?</p>
+    <div class="box">
+      <h2>Så spelar du</h2>
+      <ol>
+        <li>Du ser början på en mening. Välj det ord du tror att AI:n väljer härnäst.</li>
+        <li>Du får lika många poäng som modellens sannolikhet för ditt ord, till exempel 62&nbsp;% = 62&nbsp;poäng.</li>
+        <li>Om du väljer modellens förstahandsval flera gånger i rad får du bonus för din svit.</li>
+      </ol>
+      <p class="small">Sannolikheterna är förberäknade uppskattningar som visar principen. Riktiga modeller räknar på ordbitar (tokens), och siffrorna skiljer sig mellan olika modeller.</p>
+    </div>
+    <div class="row"><button class="btn" id="btn-start">Starta – 10 rundor</button></div>
+  </section>
+
+  <!-- RUNDA -->
+  <section class="screen" id="scr-round" hidden>
+    <div class="progress" id="progress"></div>
+    <div class="prompt-card">
+      <div class="ticks"><span></span><span></span><span></span><span></span></div>
+      <div class="prompt">
+        <div class="kicker">Vilket ord skriver AI:n härnäst?</div>
+        <div class="text"><span id="prompt-text"></span> <span class="blank" id="blank">&nbsp;</span></div>
+      </div>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="reveal" id="reveal" hidden>
+      <div class="verdict"><h2 id="verdict"></h2><span class="gain" id="gain"></span></div>
+      <div class="bars" id="bars"></div>
+      <div class="lesson" id="lesson"></div>
+      <div class="row"><button class="btn" id="btn-next">Nästa</button><span class="small" style="color:var(--slate)">eller tryck Enter</span></div>
+    </div>
+  </section>
+
+  <!-- SLUT -->
+  <section class="screen" id="scr-end" hidden>
+    <h1>Klart!</h1>
+    <div class="final">
+      <div class="box">
+        <span class="small">Din poäng</span>
+        <div class="big-score" id="end-score">0</div>
+        <p id="end-summary" style="margin:0"></p>
+        <h2 style="margin-top:8px">Det här visade spelet</h2>
+        <ul class="insights">
+          <li><b>AI förutsäger, den vet inte.</b> Den väljer det ord som oftast brukar följa, utifrån enorma mängder text.</li>
+          <li><b>Det som är sannolikt är inte alltid sant.</b> Därför kan AI svara säkert på frågor som saknar svar.</li>
+          <li><b>Siffror och bokstäver är svåra för AI.</b> Den ser ordbitar, inte enskilda tecken, och räknar inte på riktigt.</li>
+        </ul>
+        <div id="save-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+          <label for="name" style="font-weight:700">Spara på topplistan</label>
+          <div class="save">
+            <input id="name" maxlength="20" placeholder="Smeknamn (inte ditt riktiga namn)" autocomplete="off">
+            <button class="btn" id="btn-save">Spara</button>
+          </div>
+        </div>
+        <div class="msg" id="msg" aria-live="polite"></div>
+        <div class="row"><button class="btn ghost" id="btn-again" style="color:var(--black);border-color:var(--black)">Spela igen</button></div>
+      </div>
+      <aside class="hs">
+        <h2>Topp 10 – Nästa ord</h2>
+        <div id="hs-rows"><div class="small">Hämtar…</div></div>
+      </aside>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ===== Supabase (samma projekt som övriga DLG Arcade-spel) ===== */
+const SUPABASE_URL = 'https://yafkxfuveudkccjkkcto.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZmt4ZnV2ZXVka2NjamtrY3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxMjgxNzMsImV4cCI6MjA5MTcwNDE3M30.yR26rgUwAouA9LV6MuXncOTsIiQvrhhe06o4vqK3pA0';
+const TABLE = 'NastaOrdHighscore';
+const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+
+/* ===== Rundor =====
+   p    = meningens början
+   d    = modellens (förberäknade, ungefärliga) sannolikheter, högst först
+   opts = de fyra alternativ eleven ser (måste finnas i d)
+   key  = viktig insikt – kommer alltid med i en omgång
+   note = förklaring som visas efter svaret */
+const ROUNDS = [
+  { p: 'Jag dricker gärna en kopp', d: [['kaffe', .58], ['te', .27], ['varm', .05], ['choklad', .03], ['juice', .004]],
+    opts: ['kaffe', 'te', 'choklad', 'juice'],
+    note: '<b>Modellen vet inte vad du gillar.</b> Den vet bara vad som brukar stå efter ”en kopp” i texter. Kaffe vinner för att det skrivs oftast.' },
+  { p: 'Sveriges huvudstad heter', d: [['Stockholm', .93], ['ju', .02], ['Uppsala', .005], ['Göteborg', .004], ['Lidköping', .0005]],
+    opts: ['Stockholm', 'Uppsala', 'Göteborg', 'Lidköping'],
+    note: '<b>Här är det mest sannolika också sant.</b> Fakta som står i miljontals texter blir nästan alltid rätt. Men det gäller inte alla frågor.' },
+  { p: 'Den första människan som gick på Mars hette', key: true, d: [['Neil', .21], ['John', .09], ['Elon', .07], ['Buzz', .05], ['ingen', .01]],
+    opts: ['Neil', 'Elon', 'Buzz', 'ingen'],
+    note: '<b>Ingen människa har gått på Mars.</b> Ändå fortsätter modellen gärna meningen med ett namn som låter rimligt. Det är så en <b>hallucination</b> uppstår: en mening som låter rätt men är påhittad.' },
+  { p: 'På fritids leker barnen ofta', d: [['med', .34], ['ute', .22], ['kull', .11], ['tillsammans', .08], ['tyst', .002]],
+    opts: ['med', 'ute', 'kull', 'tyst'],
+    note: '<b>Små ord vinner ofta.</b> Ord som ”med”, ”i” och ”och” är vanligast i alla texter. Därför ligger de ofta högt, även om de inte säger så mycket.' },
+  { p: 'Efter regn kommer', d: [['solsken', .78], ['sol', .10], ['det', .03], ['snö', .01], ['åska', .004]],
+    opts: ['solsken', 'sol', 'snö', 'åska'],
+    note: '<b>Ordspråk är lätta för en AI.</b> Fasta uttryck har den sett tusentals gånger, så den är nästan säker.' },
+  { p: 'Hon öppnade dörren och', d: [['gick', .19], ['såg', .17], ['klev', .12], ['möttes', .09], ['sjöng', .003]],
+    opts: ['gick', 'såg', 'klev', 'sjöng'],
+    note: '<b>Ibland är modellen osäker.</b> Många ord passar, så sannolikheten sprids ut. Det är därför samma fråga kan ge olika svar varje gång du frågar.' },
+  { p: '2 + 2 =', d: [['4', .90], ['fyra', .04], ['5', .01], ['22', .006], ['3', .005]],
+    opts: ['4', '5', '22', '3'],
+    note: '<b>Modellen räknar inte – den känner igen.</b> ”2 + 2 = 4” har den sett otaliga gånger. Med ovanliga tal blir det svårare. Det märks i nästa matteruta.' },
+  { p: '4 817 × 293 =', key: true, d: [['1 411 381', .06], ['1 411 281', .05], ['1 410 381', .04], ['1 412 381', .03]],
+    opts: ['1 411 381', '1 411 281', '1 410 381', '1 412 381'],
+    note: '<b>Rätt svar är 1 411 381, men modellen är nästan lika säker på fel svar.</b> Talet har den aldrig sett, så den gissar på något som ser ut som ett rimligt svar. Kontrollräkna alltid AI:ns matte.' },
+  { p: 'Enligt WHO är hälsa ett tillstånd av fullständigt fysiskt, psykiskt och socialt', d: [['välbefinnande', .91], ['välmående', .04], ['välbehag', .02], ['ansvar', .002], ['lugn', .001]],
+    opts: ['välbefinnande', 'välmående', 'ansvar', 'lugn'],
+    note: '<b>Kända citat sitter som berget.</b> WHO:s definition finns i väldigt många texter, så modellen kan den utantill. Den här kan du också från Hälsopedagogiken!' },
+  { p: 'Ett salutogent perspektiv fokuserar på det som', d: [['främjar', .38], ['skapar', .20], ['får', .10], ['orsakar', .02], ['skadar', .01]],
+    opts: ['främjar', 'skapar', 'orsakar', 'skadar'],
+    note: '<b>Ämnesord följer mönster.</b> ”Salutogent” står nästan alltid nära ord som ”främjar” och ”hälsa”. Modellen har lärt sig sambandet utan att förstå begreppet.' },
+  { p: 'Jag har inte gjort läxan eftersom', d: [['jag', .63], ['det', .10], ['min', .06], ['hunden', .02], ['läraren', .01]],
+    opts: ['jag', 'det', 'hunden', 'läraren'],
+    note: '<b>Det roliga svaret är inte det vanliga.</b> ”Hunden åt upp den” är ett känt skämt, men i vanliga texter fortsätter meningen oftast med ”jag”. Därför låter AI-texter ofta lite tråkiga och förutsägbara.' },
+  { p: 'Den bästa fotbollsspelaren genom tiderna är', d: [['Messi', .30], ['Pelé', .18], ['Ronaldo', .14], ['Maradona', .08], ['Zlatan', .05]],
+    opts: ['Messi', 'Pelé', 'Ronaldo', 'Zlatan'],
+    note: '<b>Åsikter blir statistik.</b> AI:n har ingen egen åsikt. Den speglar vad som oftast skrivs, och det beror på vem som skrivit texterna den tränats på.' },
+  { p: 'Ordet ”jordgubbe” innehåller så här många r:', key: true, d: [['2', .44], ['3', .31], ['1', .18], ['4', .03]],
+    opts: ['1', '2', '3', '4'],
+    note: '<b>Rätt svar är 1, men modellen gissar helst 2.</b> En språkmodell ser inte bokstäver utan ordbitar (tokens). Att räkna bokstäver är därför förvånansvärt svårt för den.' },
+  { p: 'Barn i förskoleåldern behöver mycket', d: [['sömn', .27], ['rörelse', .18], ['kärlek', .12], ['stöd', .10], ['skärmtid', .004]],
+    opts: ['sömn', 'rörelse', 'kärlek', 'skärmtid'],
+    note: '<b>Flera svar är rimliga.</b> Sömn, rörelse och kärlek är alla rätt i verkligheten. Modellen väljer bara det som oftast står i texterna, inte det som är viktigast.' },
+  { p: 'Det var en gång en', d: [['liten', .41], ['flicka', .12], ['kung', .10], ['pojke', .08], ['dator', .001]],
+    opts: ['liten', 'kung', 'flicka', 'dator'],
+    note: '<b>Modellen känner igen genren.</b> ”Det var en gång” betyder saga, och då kommer sagoord. Kontexten styr allt.' },
+  { p: 'Läkaren sa att jag behövde en', d: [['remiss', .22], ['ny', .14], ['sjukskrivning', .10], ['vila', .06], ['banan', .0001]],
+    opts: ['remiss', 'sjukskrivning', 'vila', 'banan'],
+    note: '<b>Ordet ”läkaren” ändrar allt.</b> Byt ut det mot ”kocken” så hamnar helt andra ord i topp. Ett enda ord i början styr vad som kommer sen. Det gäller också när du skriver prompter.' }
+];
+
+/* ===== Spellogik ===== */
+const N = 10;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pct = p => p >= .1 ? Math.round(p * 100) + ' %' : p >= .01 ? (Math.round(p * 1000) / 10).toString().replace('.', ',') + ' %' : '<1 %';
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let deck = [], idx = 0, score = 0, streak = 0, topPicks = 0, answered = false, savedId = null;
+
+function show(id) { ['scr-start', 'scr-round', 'scr-end'].forEach(s => $('#' + s).hidden = s !== id); $('#stats').hidden = id !== 'scr-round'; window.scrollTo(0, 0); }
+
+function start() {
+  const keys = ROUNDS.filter(r => r.key), rest = shuffle(ROUNDS.filter(r => !r.key));
+  deck = shuffle([...keys, ...rest.slice(0, N - keys.length)]);
+  idx = 0; score = 0; streak = 0; topPicks = 0; savedId = null;
+  $('#s-total').textContent = N;
+  show('scr-round');
+  round();
+}
+
+function round() {
+  answered = false;
+  const r = deck[idx];
+  $('#s-round').textContent = idx + 1;
+  $('#s-score').textContent = score;
+  $('#s-streak').textContent = streak;
+  $('#progress').innerHTML = Array.from({ length: N }, (_, i) => `<i class="${i < idx ? 'done' : ''}"></i>`).join('');
+  $('#prompt-text').textContent = r.p;
+  const blank = $('#blank'); blank.textContent = ' '; blank.classList.remove('filled');
+  $('#opts').innerHTML = shuffle(r.opts).map((w, i) =>
+    `<button class="opt" data-w="${esc(w)}"><span class="k">${i + 1}</span>${esc(w)}</button>`).join('');
+  $('#reveal').hidden = true;
+  $('#opts .opt').focus({ preventScroll: true });
+}
+
+function pick(word) {
+  if (answered) return;
+  answered = true;
+  const r = deck[idx];
+  const prob = (r.d.find(([w]) => w === word) || [, 0])[1];
+  const top = r.d[0][0];
+  const isTop = word === top;
+  let gain = Math.max(1, Math.round(prob * 100));
+  if (isTop) { streak++; topPicks++; if (streak > 1) gain += (streak - 1) * 5; } else streak = 0;
+  score += gain;
+
+  document.querySelectorAll('.opt').forEach(b => {
+    b.disabled = true;
+    b.classList.toggle('picked', b.dataset.w === word);
+    b.classList.toggle('dim', b.dataset.w !== word);
+  });
+  const blank = $('#blank'); blank.textContent = word; blank.classList.add('filled');
+
+  $('#verdict').textContent = isTop ? (streak > 1 ? `Som en AI! Svit ×${streak}` : 'Som en AI!') : `AI:n valde ”${top}”`;
+  $('#gain').textContent = '+' + gain;
+  const rest = Math.max(0, 1 - r.d.reduce((s, [, p]) => s + p, 0));
+  const max = r.d[0][1];
+  $('#bars').innerHTML = r.d.map(([w, p], i) =>
+    `<div class="bar ${i === 0 ? 'top' : ''} ${w === word ? 'mine' : ''}"><span class="w">${esc(w)}</span><span class="track"><span class="fill" data-p="${p / Math.max(max, rest)}"></span></span><span class="p">${pct(p)}</span></div>`).join('') +
+    `<div class="bar rest"><span class="w">Alla andra ord</span><span class="track"><span class="fill" style="background:#D9DBDE" data-p="${rest / Math.max(max, rest)}"></span></span><span class="p">${pct(rest)}</span></div>`;
+  $('#lesson').innerHTML = r.note;
+  $('#reveal').hidden = false;
+  $('#btn-next').textContent = idx === N - 1 ? 'Se resultat' : 'Nästa';
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    document.querySelectorAll('.fill').forEach(f => f.style.width = (Number(f.dataset.p) * 100) + '%')));
+  $('#s-score').textContent = score;
+  $('#s-streak').textContent = streak;
+  $('#reveal').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('#btn-next').focus({ preventScroll: true });
+}
+
+function next() {
+  if (!answered) return;
+  idx++;
+  if (idx < N) round(); else end();
+}
+
+function end() {
+  show('scr-end');
+  $('#end-score').textContent = score;
+  $('#end-summary').innerHTML = `Du valde samma ord som AI:n i <b>${topPicks} av ${N}</b> rundor.`;
+  $('#save-wrap').hidden = false;
+  $('#msg').textContent = ''; $('#msg').className = 'msg';
+  $('#name').value = (() => { try { return localStorage.getItem('dlg_alias') || ''; } catch (e) { return ''; } })();
+  loadTop();
+}
+
+async function readErr(res) {
+  let d = ''; try { const j = await res.json(); d = j.message || j.hint || ''; } catch (e) {}
+  if (res.status === 404 || /does not exist|Could not find the table/i.test(d)) return 'Topplistan är inte uppsatt än (tabellen saknas i databasen).';
+  return 'Fel ' + res.status + (d ? ': ' + d : '');
+}
+
+async function loadTop() {
+  const box = $('#hs-rows');
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=id,name,score&order=score.desc&limit=10`, { headers: H });
+    if (!res.ok) throw new Error(await readErr(res));
+    const rows = await res.json();
+    box.innerHTML = rows.length ? rows.map((r, i) =>
+      `<div class="r ${r.id === savedId ? 'me' : ''}"><span class="n">${i + 1}</span><span class="nm">${esc(r.name)}</span><span class="s">${esc(r.score)}</span></div>`).join('')
+      : '<div class="small">Inga resultat än – bli först!</div>';
+  } catch (e) { box.innerHTML = `<div class="small">${esc(e instanceof TypeError ? 'Kunde inte nå topplistan just nu.' : (e.message || 'Kunde inte hämta topplistan.'))}</div>`; }
+}
+
+async function save() {
+  const name = $('#name').value.trim().replace(/\s+/g, ' ').slice(0, 20);
+  const msg = $('#msg');
+  if (!name) { msg.textContent = 'Skriv ett smeknamn först.'; msg.className = 'msg err'; $('#name').focus(); return; }
+  try { localStorage.setItem('dlg_alias', name); } catch (e) {}
+  $('#btn-save').disabled = true; msg.className = 'msg'; msg.textContent = 'Sparar…';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+      method: 'POST', headers: { ...H, Prefer: 'return=representation' },
+      body: JSON.stringify({ name, score })
+    });
+    if (!res.ok) throw new Error(await readErr(res));
+    const [row] = await res.json().catch(() => [{}]);
+    savedId = row && row.id;
+    msg.textContent = 'Sparat! Snyggt jobbat.';
+    $('#save-wrap').hidden = true;
+    try { parent !== window && parent.postMessage({ type: 'dlg-score-saved', game: 'nastaord' }, '*'); } catch (e) {}
+    loadTop();
+  } catch (e) {
+    msg.textContent = 'Kunde inte spara. ' + (e instanceof TypeError ? 'Ingen kontakt med topplistan – försök igen.' : (e.message || '')); msg.className = 'msg err';
+  } finally { $('#btn-save').disabled = false; }
+}
+
+$('#btn-start').addEventListener('click', start);
+$('#btn-again').addEventListener('click', start);
+$('#btn-next').addEventListener('click', next);
+$('#btn-save').addEventListener('click', save);
+$('#name').addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
+$('#opts').addEventListener('click', e => { const b = e.target.closest('.opt'); if (b) pick(b.dataset.w); });
+document.addEventListener('keydown', e => {
+  if ($('#scr-round').hidden || e.target.tagName === 'INPUT') return;
+  if (!answered && /^[1-4]$/.test(e.key)) { const b = document.querySelectorAll('.opt')[+e.key - 1]; if (b) pick(b.dataset.w); }
+  else if (answered && e.key === 'Enter') { e.preventDefault(); next(); }
+});
+</script>
+</body>
+</html>

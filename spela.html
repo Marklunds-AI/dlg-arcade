@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spela – DLG Arcade</title>
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/arcade.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <div class="wrap play-page">
+      <div class="play-head">
+        <div class="left">
+          <a class="back" href="verktyg.html"><span id="back-icon"></span>Alla verktyg</a>
+          <h1 id="game-title"></h1>
+        </div>
+        <a class="fullscreen" id="fullscreen" target="_blank" rel="noopener"><span id="ext-icon"></span>Öppna i helskärm</a>
+      </div>
+
+      <div class="frame" id="frame"><iframe id="game" title=""></iframe></div>
+
+      <div class="about-row">
+        <div class="about">
+          <h2>Om spelet</h2>
+          <p id="game-desc"></p>
+          <div class="facts">
+            <span id="game-time"></span>
+            <span id="game-courses"></span>
+          </div>
+        </div>
+        <aside class="scores play-scores" aria-labelledby="ps-title">
+          <h2 id="ps-title"></h2>
+          <div class="rows" id="play-rows" aria-live="polite"></div>
+          <button class="btn btn-md" id="refresh" style="background:var(--lk-black);color:#fff;margin-top:12px;align-self:flex-start">Uppdatera listan</button>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+</div>
+
+<script src="assets/js/arcade.js"></script>
+<script>
+renderChrome('verktyg');
+const id = new URLSearchParams(location.search).get('spel');
+const t = toolById(id) || toolById(FEATURED_ID);
+document.title = t.title + ' – DLG Arcade';
+$('#back-icon').outerHTML = icon('arrow-left', 18);
+$('#ext-icon').outerHTML = icon('external-link', 18);
+$('#game-title').textContent = t.title;
+$('#fullscreen').href = t.href;
+$('#frame').style.background = t.bg;
+$('#game').src = t.href;
+$('#game').title = t.title;
+$('#game-desc').textContent = t.desc;
+$('#game-time').innerHTML = icon('clock', 18) + esc(t.time);
+$('#game-courses').innerHTML = icon('graduation-cap', 18) + esc(t.courses.join(', '));
+$('#ps-title').textContent = 'High score i ' + t.short;
+
+async function loadScores() {
+  $('#play-rows').innerHTML = statusHTML('Hämtar resultat…');
+  try { $('#play-rows').innerHTML = rowsHTML(await fetchTop(t, 5), false); }
+  catch (e) { $('#play-rows').innerHTML = statusHTML('Topplistan kunde inte hämtas just nu.'); }
+}
+$('#refresh').addEventListener('click', loadScores);
+// Spelen kan meddela att ett resultat sparats → uppdatera listan direkt
+window.addEventListener('message', e => { if (e.data && e.data.type === 'dlg-score-saved') loadScores(); });
+loadScores();
+</script>
+</body>
+</html>

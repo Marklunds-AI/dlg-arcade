@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DLG Arcade</title>
+<meta name="description" content="Spel och övningar för elever på De la Gardiegymnasiet – lär dig begreppen och bli skickligare på AI.">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/Inter-300-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/arcade.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <div class="wrap hero">
+      <div class="hero-text">
+        <div class="eyebrow">De la Gardiegymnasiet · Lidköpings kommun</div>
+        <h1>DLG<br><span>Arcade</span></h1>
+        <p class="tagline">Lär dig begreppen. <em>Slå rekordet.</em></p>
+        <div class="actions">
+          <a class="btn btn-inverse" id="play-featured" href="#">Börja spela <span id="arrow1"></span></a>
+          <a class="btn btn-secondary" href="verktyg.html">Se alla verktyg</a>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="false">
+        <div class="sheet s1"></div>
+        <div class="sheet s2"></div>
+        <a class="cassette" id="cassette" href="#">
+          <div class="ticks"><span></span><span></span><span></span><span></span></div>
+          <div class="label">
+            <div class="kicker">Veckans spel</div>
+            <div class="title" id="featured-title"></div>
+          </div>
+          <div class="go">Spela nu <span id="arrow2"></span></div>
+        </a>
+      </div>
+    </div>
+
+    <section class="band">
+      <div class="wrap">
+        <div class="picker">
+          <div class="picker-head">
+            <h2>Välj ditt spel</h2>
+            <div class="chips" id="type-chips" role="group" aria-label="Filtrera på typ"></div>
+          </div>
+          <div class="grid" id="start-grid"></div>
+          <div class="empty" id="start-empty" hidden>Det finns inga verktyg av den typen än.</div>
+        </div>
+
+        <aside class="scores" aria-labelledby="hs-title">
+          <div class="scores-head">
+            <h2 id="hs-title">High score</h2>
+            <span>Hela skolan</span>
+          </div>
+          <div class="seg" id="lb-tabs" role="group" aria-label="Välj topplista"></div>
+          <div class="rows" id="lb-rows" aria-live="polite"></div>
+          <div class="note">Topplistorna uppdateras direkt när någon sparar ett resultat.</div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+</div>
+
+<script src="assets/js/arcade.js"></script>
+<script>
+renderChrome('start');
+
+const featured = toolById(FEATURED_ID);
+$('#featured-title').textContent = featured.title;
+$('#play-featured').href = $('#cassette').href = 'spela.html?spel=' + featured.id;
+$('#arrow1').outerHTML = icon('arrow-right', 21);
+$('#arrow2').outerHTML = icon('arrow-right', 22);
+
+/* Typfilter */
+let type = 'Alla';
+function renderGrid() {
+  const list = TOOLS.filter(t => type === 'Alla' || t.type === type);
+  const more = (type === 'Alla' || type === 'Spel') ? `<div class="more"><strong>Nästa spel laddas…</strong><span>Fler spel om AI och begrepp läggs upp här.</span></div>` : '';
+  $('#start-grid').innerHTML = list.map(t => cardHTML(t)).join('') + more;
+  $('#start-empty').hidden = list.length > 0;
+  $('#type-chips').innerHTML = ['Alla', 'Spel', 'Quiz', 'Övning'].map(l =>
+    `<button class="chip" aria-pressed="${l === type}" data-type="${l}">${l}</button>`).join('');
+}
+$('#type-chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-type]'); if (!b) return;
+  type = b.dataset.type; renderGrid();
+});
+renderGrid();
+
+/* Topplistor */
+const LB_TABS = [['alla', 'Alla'], ...TOOLS.map(t => [t.id, t.id === 'racet' ? 'Racet' : t.id === 'snake' ? 'Snake' : t.short])];
+let lbTab = 'alla';
+const cache = {};
+function loadTool(t) {
+  if (!cache[t.id]) cache[t.id] = fetchTop(t, 5).catch(() => null);
+  return cache[t.id];
+}
+async function renderLB() {
+  $('#lb-tabs').innerHTML = LB_TABS.map(([id, l]) => `<button aria-pressed="${id === lbTab}" data-tab="${id}">${esc(l)}</button>`).join('');
+  const box = $('#lb-rows');
+  box.innerHTML = statusHTML('Hämtar resultat…');
+  const tab = lbTab;
+  if (tab === 'alla') {
+    const all = await Promise.all(TOOLS.map(loadTool));
+    if (tab !== lbTab) return;
+    const ok = all.filter(Boolean);
+    if (!ok.length) { box.innerHTML = statusHTML('Topplistan kunde inte hämtas just nu.'); return; }
+    box.innerHTML = rowsHTML(ok.flat().sort((a, b) => b.score - a.score).slice(0, 5), true);
+  } else {
+    const rows = await loadTool(toolById(tab));
+    if (tab !== lbTab) return;
+    box.innerHTML = rows ? rowsHTML(rows, false) : statusHTML('Topplistan kunde inte hämtas just nu.');
+  }
+}
+$('#lb-tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  lbTab = b.dataset.tab; renderLB();
+});
+renderLB();
+</script>
+</body>
+</html>

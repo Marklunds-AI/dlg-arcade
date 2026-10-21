@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Begreppsracet</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, #eef1f6 0%, #dfe4ee 100%);
+    text-align: center; margin: 0; padding: 20px; color: #111827;
+  }
+  h1 { margin-bottom: 4px; }
+  .subtitle { color: #4b5563; margin-top: 0; }
+
+  .btn { display: block; width: 100%; margin: 10px 0; padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; background: #3b82f6; color: white; transition: 0.15s; }
+  .btn:hover { background: #2563eb; transform: translateY(-2px); }
+  .btn:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+  .btn-green { background: #10b981; } .btn-green:hover { background: #059669; }
+
+  #menuScreen, #gameScreen { max-width: 460px; margin: 0 auto; }
+
+  #trackGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .trackCard {
+    position: relative; background: white; border: 3px solid #d1d5db; border-radius: 12px;
+    padding: 14px 10px; cursor: pointer; transition: 0.15s; text-align: left;
+  }
+  .trackCard:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
+  .trackCard.selected { box-shadow: 0 0 0 3px rgba(0,0,0,0.05), 0 8px 16px rgba(0,0,0,0.15); background: #f8fafc; }
+  .trackName { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+  .trackMeta { font-size: 12px; color: #6b7280; }
+  .deleteTrackBtn { position: absolute; top: 4px; right: 4px; background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.6; }
+  .deleteTrackBtn:hover { opacity: 1; }
+
+  #ui { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #111; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .iconBtn { border: none; background: #e5e7eb; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 15px; }
+  #recordDisplay { color: #b45309; transition: color 0.3s; }
+
+  #menuHighscoreBox { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 2px solid #f59e0b; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+  #menuHighscoreBox h3 { margin: 0 0 8px 0; color: #92400e; }
+  #menuHighscoreTable { width: 100%; border-collapse: collapse; font-size: 15px; }
+  #menuHighscoreTable td { padding: 4px 6px; text-align: left; }
+  #menuHighscoreTable tr:first-child td { font-weight: bold; font-size: 17px; color: #92400e; }
+  .iconBtn:hover { background: #d1d5db; }
+
+  canvas { background-color: #374151; border: 4px solid #111827; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.3); touch-action: none; }
+  #gameContainer { position: relative; display: inline-block; margin-top: 6px; }
+
+  #touchControls { display: flex; justify-content: space-between; margin-top: 10px; gap: 10px; }
+  .touchBtn { flex: 1; padding: 18px; font-size: 26px; font-weight: bold; border: none; border-radius: 10px; background: #1f2937; color: white; user-select: none; }
+  .touchBtn:active { background: #374151; }
+
+  .modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 26px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); width: 85%; max-width: 420px; z-index: 10; max-height: 85vh; overflow-y: auto; }
+  .modal h2 { margin-top: 0; color: #1f2937; }
+  .hint { font-size: 12px; color: #6b7280; text-align: left; }
+
+  #highscoreTable { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 15px; }
+  #highscoreTable th, #highscoreTable td { padding: 7px; border-bottom: 1px solid #ddd; text-align: left; }
+  #highscoreTable th { background-color: #f3f4f6; }
+  input[type="text"], textarea { width: 100%; padding: 10px; font-size: 15px; margin: 8px 0; border: 2px solid #ccc; border-radius: 6px; font-family: inherit; }
+
+  #loadingMsg { color: #2563eb; font-weight: bold; font-size: 14px; margin-top: 10px; }
+
+  #toast {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    background: rgba(17,24,39,0.9); color: white; padding: 8px 14px; border-radius: 8px;
+    font-size: 13px; max-width: 90%; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 5;
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+
+<h1>🚗 Begreppsracet 🚗</h1>
+
+<!-- ===== MENYSKÄRM: VÄLJ BANA ===== -->
+<div id="menuScreen">
+  <div id="menuHighscoreBox">
+    <h3>🏆 Topp 10 (alla banor)</h3>
+    <table id="menuHighscoreTable">
+      <tbody id="menuHighscoreBody"><tr><td colspan="3">Hämtar...</td></tr></tbody>
+    </table>
+    <button class="btn" id="menuShowAllBtn" style="background:#92400e; margin-top:8px; padding:8px; font-size:14px;">Visa alla resultat</button>
+  </div>
+  <p class="subtitle">Välj en bana (begreppslista) och kör!</p>
+  <div id="trackGrid"></div>
+  <button class="btn" id="addTrackBtn" style="background:#6b7280;">➕ Skapa egen bana</button>
+  <button class="btn btn-green" id="startBtn" disabled>▶️ Starta spelet</button>
+</div>
+
+<!-- ===== SPELSKÄRM ===== -->
+<div id="gameScreen" style="display:none;">
+  <div id="ui">
+    <span id="trackNameLabel">Bana</span>
+    <span>Poäng: <span id="scoreDisplay">0</span> m</span>
+    <span id="recordDisplay">🏆 Rekord: <span id="recordValue">–</span> m</span>
+    <span id="livesDisplay"></span>
+    <button class="iconBtn" id="muteBtn">🔊</button>
+    <button class="iconBtn" id="menuBtn">☰ Banor</button>
+  </div>
+
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="450" height="650"></canvas>
+    <div id="toast"></div>
+
+    <div id="quizModal" class="modal">
+      <h2 id="questionText">Vad betyder begreppet?</h2>
+      <div id="optionsContainer"></div>
+    </div>
+
+    <div id="gameOverModal" class="modal">
+      <h2 id="gameOverTitle" style="color:#dc2626;">KROCK!</h2>
+      <p id="gameOverReason" style="white-space:pre-line;"></p>
+      <p style="font-size: 22px; font-weight: bold;">Din poäng: <span id="finalScore">0</span> meter</p>
+
+      <div id="submitSection">
+        <input type="text" id="playerName" placeholder="Skriv in ditt namn...">
+        <button class="btn btn-green" onclick="saveHighscore()">Spara poäng & Spela igen</button>
+      </div>
+
+      <div id="loadingMsg"></div>
+
+      <h3>🏆 Topp 10 (alla banor)</h3>
+      <table id="highscoreTable">
+        <thead><tr><th>Plats</th><th>Namn</th><th>Poäng</th></tr></thead>
+        <tbody id="highscoreBody"></tbody>
+      </table>
+      <button class="btn" id="gameOverShowAllBtn" style="background:#92400e; margin-top:8px; padding:8px; font-size:14px;">Visa alla resultat</button>
+
+      <button class="btn" style="background:#6b7280; margin-top: 16px;" onclick="startGame()">Spela igen (samma bana)</button>
+      <button class="btn" style="background:#374151; margin-top: 8px;" onclick="backToMenuFromGameOver()">Byt bana</button>
+    </div>
+  </div>
+
+  <div id="touchControls">
+    <button class="touchBtn" id="leftBtn">◀</button>
+    <button class="touchBtn" id="rightBtn">▶</button>
+  </div>
+</div>
+
+<!-- ===== ALLA RESULTAT ===== -->
+<div id="allScoresModal" class="modal" style="position: fixed;">
+  <h2>🏆 Alla resultat</h2>
+  <div style="max-height:55vh; overflow-y:auto;">
+    <table id="allScoresTable">
+      <thead><tr><th>Plats</th><th>Namn</th><th>Poäng</th></tr></thead>
+      <tbody id="allScoresBody"><tr><td colspan="3">Hämtar...</td></tr></tbody>
+    </table>
+  </div>
+  <button class="btn" style="background:#6b7280; margin-top:14px;" onclick="closeAllScores()">Stäng</button>
+</div>
+
+<!-- ===== SKAPA EGEN BANA ===== -->
+<div id="trackEditorModal" class="modal" style="position: fixed;">
+  <h2>Skapa egen bana</h2>
+  <input type="text" id="newTrackName" placeholder="Namn på banan, t.ex. KASAM & Coping">
+  <textarea id="newTrackConcepts" rows="8" placeholder="En rad per begrepp, i formatet:&#10;Begrepp | Förklaring&#10;Begrepp | Förklaring"></textarea>
+  <p class="hint">Minst 3 rader behövs. Banan sparas i den här webbläsaren (den syns bara på den här enheten).</p>
+  <button class="btn btn-green" onclick="saveCustomTrack()">Spara bana</button>
+  <button class="btn" style="background:#6b7280;" onclick="closeTrackEditor()">Avbryt</button>
+</div>
+
+<script>
+// ================= DATABAS (highscore, oförändrad struktur) =================
+const dbUrl = 'https://yafkxfuveudkccjkkcto.supabase.co/rest/v1/Highscore';
+const dbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZmt4ZnV2ZXVka2NjamtrY3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxMjgxNzMsImV4cCI6MjA5MTcwNDE3M30.yR26rgUwAouA9LV6MuXncOTsIiQvrhhe06o4vqK3pA0';
+const dbHeaders = {
+  'apikey': dbKey,
+  'Authorization': 'Bearer ' + dbKey,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=minimal'
+};
+
+// ================= STANDARDBANOR =================
+const DEFAULT_DISTRACTORS = ["Fotboll","Tandborste","Banan","Kaffebryggare","Skohorn","Mikrovågsugn","Cykel","Pannkaka","Soffa","Kattunge","Traktor","Paraply","Moped","Tavla","Gurka","Kudde","Glass","Solglasögon","Ryggsäck","Gitarr"];
+
+const BUILT_IN_TRACKS = [
+  {
+    id: "salutogent",
+    name: "Salutogent perspektiv",
+    color: "#3b82f6",
+    builtin: true,
+    concepts: [
+      { word: "Salutogenes", def: "Hälsans ursprung (från latin och grekiska)" },
+      { word: "Salutogena perspektivet", def: "Ett sätt att se på hälsa där man fokuserar på de faktorer som skapar god hälsa." },
+      { word: "Faktorer", def: "Omständigheter som bidrar till ett visst resultat." },
+      { word: "Maskrosbarn", def: "Barn som klarar sig bra i livet trots svåra uppväxtförhållanden." },
+      { word: "KASAM", def: "Känsla av sammanhang" },
+      { word: "Begriplighet", def: "Att förstå eller kunna förstå något" },
+      { word: "Hanterbarhet", def: "Att hantera eller kunna hantera något" },
+      { word: "Meningsfullhet", def: "När man känner att något är viktigt eller att det ger mig något att hålla på med detta." },
+      { word: "Holistiskt arbetssätt", def: "Man ser helheten." },
+      { word: "Självkänsla", def: "Individens bedömning av sig själv. Är man tillräckligt bra? Duger man? Sett från sig själv." },
+      { word: "Självförtroende", def: "Individens tro på sin egna förmåga. Hur mycket klarar man av? Kommer man lyckas eller misslyckas? Vad tror man om sig själv." },
+      { word: "Coping", def: "Att hantera motgångar på olika sätt." },
+      { word: "Ansvarstagande", def: "Att själv förstå att de val och handlingar man gör kommer få konsekvenser och det behöver man själv stå för." },
+      { word: "Humor", def: "Förmåga att skämta och att förstå skämt" }
+    ],
+    distractors: DEFAULT_DISTRACTORS
+  },
+  {
+    id: "perspektiv-pa-halsa",
+    name: "Perspektiv på hälsa",
+    color: "#f59e0b",
+    builtin: true,
+    concepts: [
+      { word: "Objektiv hälsa", def: "Hälsa bedömd utifrån fakta och saklighet." },
+      { word: "Subjektiv hälsa", def: "Hälsa bedömd utifrån värderingar och känslor." },
+      { word: "Psykosomatiskt", def: "Kroppsliga symtom med psykisk orsak." },
+      { word: "Helhetsperspektiv", def: "Man ser helheten, inte detaljer." },
+      { word: "Fysisk hälsa", def: "Hur kroppen mår och fungerar." },
+      { word: "Psykisk hälsa", def: "Inre välbefinnande, hur vi mår i tankar och känslor." },
+      { word: "Social hälsa", def: "Hur relationerna är till andra människor, om man ingår i ett sammanhang och om det sociala livet fungerar." },
+      { word: "Allmänt hälsotillstånd", def: "Hur man uppfattar den egna hälsan (pigg, trött, frisk)." },
+      { word: "Funktionsnedsättning/Funktionsvariation", def: "Rörelsehinder, mentala variationer eller syn- och hörselnedsättningar, t.ex. Cerebral Pares, blindhet, förlamning m.m." },
+      { word: "Nedstämdhet", def: "Att känna sig nere, inte på topp eller ledsen." },
+      { word: "WHO", def: "Världshälsoorganisationen." },
+      { word: "Fattigdom", def: "Att inte ha tillräckligt med pengar för att klara sig." },
+      { word: "Välfärd", def: "Att befolkningen i ett land har pengar nog för att leva bättre än vad man behöver." }
+    ],
+    distractors: DEFAULT_DISTRACTORS
+  },
+  {
+    id: "vad-ar-fritid",
+    name: "Vad är fritid?",
+    color: "#8b5cf6",
+    builtin: true,
+    concepts: [
+      { word: "Tvångstid", def: "Tid man inte bestämmer över själv, när man måste göra ett \"måste\"." },
+      { word: "Ekonomisk tvångstid", def: "Tid man måste lägga på jobb och skola för att tjäna pengar eller i framtiden tjäna pengar." },
+      { word: "Fysiologisk tvångstid", def: "Tid man lägger för att sköta sin fysiska hälsa eller fylla fysiska behov, t.ex. sova, äta." },
+      { word: "Social tvångstid", def: "Tid man lägger på familj och vänner för att hålla relationen levande." },
+      { word: "Inre motivation", def: "Motivationen finns i personen, i tankar och känslor." },
+      { word: "Yttre motivation", def: "Motivation som kommer från någon eller något annat." },
+      { word: "Livsmakt", def: "Att känna att man har kontroll och kan påverka sitt eget liv." },
+      { word: "Kollektivt", def: "Gemensamt i gruppen eller ett land." },
+      { word: "Kommersiell", def: "Med vinstsyfte, ett syfte att tjäna pengar." },
+      { word: "Friluftsliv", def: "Typ av fritid när vi vistas i naturen, t.ex. vandra, campa." },
+      { word: "Objektivt", def: "Att bedöma, studera eller värdera något utan känslor." },
+      { word: "Verifierbar", def: "Kan bevisas med hjälp av vetenskap." },
+      { word: "Oorganiserad fritid", def: "Fritid som personen själv bestämmer över: vad, när, hur och med vem." },
+      { word: "Organiserad fritid", def: "Fritid som är organiserad med ledare, innehåll och bestämda tider." },
+      { word: "Subjektivt", def: "Att spekulera eller bedöma något utifrån känslor och egna tankar. Att tro, tycka och tänka." },
+      { word: "Fritid", def: "Den del av dygnet eller livet då man inte arbetar, studerar eller utför obligatoriska vardagssysslor." },
+      { word: "Fri tid", def: "Tid som för stunden är helt obokad och fri från alla typer av krav eller måsten." }
+    ],
+    distractors: DEFAULT_DISTRACTORS
+  }
+];
+
+let tracks = [];
+let selectedTrackId = null;
+let currentTrack = null;
+
+function loadCustomTracks(){
+  try {
+    const raw = localStorage.getItem("begreppsracet_custom_tracks");
+    return raw ? JSON.parse(raw) : [];
+  } catch(e){ return []; }
+}
+function saveCustomTracksToStorage(list){
+  try { localStorage.setItem("begreppsracet_custom_tracks", JSON.stringify(list)); } catch(e){}
+}
+
+function initTracks(){
+  tracks = [...BUILT_IN_TRACKS, ...loadCustomTracks()];
+  renderTrackGrid();
+}
+
+function renderTrackGrid(){
+  const grid = document.getElementById("trackGrid");
+  grid.innerHTML = "";
+  tracks.forEach(t => {
+    const card = document.createElement("div");
+    card.className = "trackCard" + (t.id === selectedTrackId ? " selected" : "");
+    card.style.borderColor = t.color || "#3b82f6";
+    card.innerHTML = `<div class="trackName">${t.name}</div><div class="trackMeta">${t.concepts.length} begrepp${t.builtin ? "" : " · egen bana"}</div>`;
+    card.onclick = () => selectTrack(t.id);
+    if (!t.builtin) {
+      const delBtn = document.createElement("button");
+      delBtn.className = "deleteTrackBtn";
+      delBtn.innerText = "🗑";
+      delBtn.title = "Ta bort bana";
+      delBtn.onclick = (e) => { e.stopPropagation(); deleteCustomTrack(t.id); };
+      card.appendChild(delBtn);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function selectTrack(id){
+  selectedTrackId = id;
+  renderTrackGrid();
+  document.getElementById("startBtn").disabled = false;
+}
+
+function deleteCustomTrack(id){
+  const custom = loadCustomTracks().filter(t => t.id !== id);
+  saveCustomTracksToStorage(custom);
+  if (selectedTrackId === id) {
+    selectedTrackId = null;
+    document.getElementById("startBtn").disabled = true;
+  }
+  initTracks();
+}
+
+function openTrackEditor(){ document.getElementById("trackEditorModal").style.display = "block"; }
+function closeTrackEditor(){
+  document.getElementById("trackEditorModal").style.display = "none";
+  document.getElementById("newTrackName").value = "";
+  document.getElementById("newTrackConcepts").value = "";
+}
+
+function saveCustomTrack(){
+  const name = document.getElementById("newTrackName").value.trim();
+  const raw = document.getElementById("newTrackConcepts").value.trim();
+  if (!name || !raw) { alert("Fyll i ett namn och minst några begrepp."); return; }
+
+  const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+  const concepts = [];
+  lines.forEach(line => {
+    const parts = line.split("|");
+    if (parts.length >= 2) {
+      concepts.push({ word: parts[0].trim(), def: parts.slice(1).join("|").trim() });
+    }
+  });
+  if (concepts.length < 3) { alert("Behöver minst 3 giltiga rader i formatet: Begrepp | Förklaring"); return; }
+
+  const colors = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899"];
+  const newTrack = {
+    id: "custom_" + Date.now(),
+    name: name,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    builtin: false,
+    concepts: concepts,
+    distractors: DEFAULT_DISTRACTORS
+  };
+  const custom = loadCustomTracks();
+  custom.push(newTrack);
+  saveCustomTracksToStorage(custom);
+  closeTrackEditor();
+  initTracks();
+  selectTrack(newTrack.id);
+}
+
+// ================= SPELVARIABLER =================
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let distance = 0;
+let runTime = 0;
+let baseSpeed = 4;
+let isPaused = false;
+let isGameOver = false;
+let car = { x: 200, y: 550, width: 45, height: 75 };
+let activeWords = [];
+let spawnTimer = 0;
+let conceptBag = [];
+
+const MAX_LIVES = 3;
+let lives = MAX_LIVES;
+let invulnFrames = 0;
+let combo = 0;
+let shake = 0;
+let particles = [];
+let scorePopups = [];
+let muted = false;
+let audioCtx = null;
+let globalTopScore = 0;
+let globalTopName = "";
+let recordBrokenThisRun = false;
+
+const keys = { ArrowLeft: false, ArrowRight: false };
+window.addEventListener("keydown", (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+window.addEventListener("keyup", (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+// ================= LJUD =================
+function playTone(freq, duration, type){
+  if (muted) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.value = 0.15;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+
+// ================= TOPPLISTA (meny + live-rekord) =================
+async function fetchGlobalTop(limit){
+  try {
+    let response = await fetch(`${dbUrl}?select=name,score&order=score.desc&limit=${limit}`, {
+      method: 'GET',
+      headers: dbHeaders
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Fel vid hämtning av topplista:", error);
+    return null;
+  }
+}
+
+async function refreshMenuHighscore(){
+  const tbody = document.getElementById("menuHighscoreBody");
+  const data = await fetchGlobalTop(10);
+  if (data === null) {
+    tbody.innerHTML = "<tr><td colspan='3'>Kunde inte hämta rekord just nu.</td></tr>";
+    return;
+  }
+  if (data.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='3'>Inga rekord ännu – bli den första!</td></tr>";
+    globalTopScore = 0;
+    globalTopName = "";
+    return;
+  }
+  globalTopScore = data[0].score;
+  globalTopName = data[0].name;
+  tbody.innerHTML = "";
+  data.forEach((s, i) => {
+    tbody.innerHTML += `<tr><td>${i === 0 ? "🥇" : i + 1}</td><td>${s.name}</td><td>${s.score} m</td></tr>`;
+  });
+}
+
+function openAllScores(){
+  document.getElementById("allScoresModal").style.display = "block";
+  loadAllScores();
+}
+function closeAllScores(){
+  document.getElementById("allScoresModal").style.display = "none";
+}
+async function loadAllScores(){
+  const tbody = document.getElementById("allScoresBody");
+  tbody.innerHTML = "<tr><td colspan='3'>Hämtar...</td></tr>";
+  const data = await fetchGlobalTop(500);
+  if (data === null) {
+    tbody.innerHTML = "<tr><td colspan='3'>Kunde inte hämta resultat just nu.</td></tr>";
+    return;
+  }
+  if (data.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='3'>Inga resultat ännu.</td></tr>";
+    return;
+  }
+  tbody.innerHTML = "";
+  data.forEach((s, i) => {
+    tbody.innerHTML += `<tr><td>${i + 1}</td><td>${s.name}</td><td>${s.score} m</td></tr>`;
+  });
+}
+
+// ================= SPELMOTOR =================
+function startGame(){
+  currentTrack = tracks.find(t => t.id === selectedTrackId) || tracks[0];
+  document.getElementById("trackNameLabel").innerText = "🏁 " + currentTrack.name;
+  recordBrokenThisRun = false;
+  document.getElementById("recordDisplay").style.color = "#b45309";
+  document.getElementById("recordValue").innerText = globalTopScore > 0 ? globalTopScore : "–";
+
+  document.getElementById("gameOverModal").style.display = "none";
+  document.getElementById("submitSection").style.display = "block";
+  distance = 0;
+  runTime = 0;
+  baseSpeed = 3.5;
+  car.x = 200;
+  activeWords = [];
+  conceptBag = [];
+  particles = [];
+  scorePopups = [];
+  lives = MAX_LIVES;
+  invulnFrames = 0;
+  combo = 0;
+  shake = 0;
+  isPaused = false;
+  isGameOver = false;
+  document.getElementById("playerName").value = "";
+  updateLivesDisplay();
+  gameLoop();
+}
+
+function backToMenuFromGameOver(){
+  document.getElementById("gameOverModal").style.display = "none";
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("menuScreen").style.display = "block";
+  refreshMenuHighscore();
+}
+
+function updateLivesDisplay(){
+  document.getElementById("livesDisplay").innerText =
+    "❤️".repeat(Math.max(lives, 0)) + "🖤".repeat(MAX_LIVES - Math.max(lives, 0));
+}
+
+function showToast(text){
+  const toast = document.getElementById("toast");
+  toast.innerText = text;
+  toast.style.opacity = "1";
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = "0"; }, 2200);
+}
+
+function update(){
+  if (isPaused || isGameOver) return;
+
+  runTime++;
+  baseSpeed = 3.5 + (runTime / 3600);
+  distance += baseSpeed * 0.05;
+
+  if (keys.ArrowLeft && car.x > 0) car.x -= 6;
+  if (keys.ArrowRight && car.x + car.width < canvas.width) car.x += 6;
+
+  spawnTimer++;
+  let spawnRate = Math.max(55, 100 - Math.floor(runTime / 120));
+  if (spawnTimer > spawnRate) {
+    spawnWord();
+    spawnTimer = 0;
+  }
+
+  for (let i = activeWords.length - 1; i >= 0; i--) {
+    let w = activeWords[i];
+    w.y += w.speed;
+
+    if (invulnFrames <= 0 && checkCollision(car, w)) {
+      activeWords.splice(i, 1);
+      handleCollision(w);
+    } else if (w.y > canvas.height) {
+      activeWords.splice(i, 1);
+    }
+  }
+  if (invulnFrames > 0) invulnFrames--;
+
+  updateParticles();
+  updateScorePopups();
+
+  document.getElementById("scoreDisplay").innerText = Math.floor(distance);
+
+  if (globalTopScore > 0 && !recordBrokenThisRun && distance > globalTopScore) {
+    recordBrokenThisRun = true;
+    document.getElementById("recordDisplay").style.color = "#dc2626";
+    document.getElementById("recordValue").innerText = Math.floor(distance);
+    showToast(`🔥 Nytt rekord! Du har slagit ${globalTopName || "toppnoteringen"}!`);
+    playTone(660, 0.15, "triangle");
+    playTone(880, 0.2, "triangle");
+  } else if (recordBrokenThisRun) {
+    document.getElementById("recordValue").innerText = Math.floor(distance);
+  }
+}
+
+function spawnWord(){
+  let isConcept = Math.random() > 0.65;
+  let text = "";
+  let conceptData = null;
+
+  if (isConcept) {
+    if (conceptBag.length === 0) {
+      conceptBag = [...currentTrack.concepts];
+      conceptBag.sort(() => 0.5 - Math.random());
+    }
+    conceptData = conceptBag.pop();
+    text = conceptData.word;
+  } else {
+    const distractors = currentTrack.distractors && currentTrack.distractors.length ? currentTrack.distractors : DEFAULT_DISTRACTORS;
+    text = distractors[Math.floor(Math.random() * distractors.length)];
+  }
+
+  ctx.font = "bold 16px Arial";
+  let tWidth = ctx.measureText(text).width + 20;
+
+  activeWords.push({
+    text: text,
+    x: Math.random() * (canvas.width - tWidth - 10) + 5,
+    y: -40,
+    width: tWidth, height: 35,
+    speed: baseSpeed + (Math.random() * 1.5),
+    isConcept: isConcept,
+    conceptData: conceptData
+  });
+}
+
+function checkCollision(r1, r2){
+  let margin = 5;
+  return (r1.x < r2.x + r2.width - margin && r1.x + r1.width > r2.x + margin &&
+          r1.y < r2.y + r2.height - margin && r1.y + r1.height > r2.y + margin);
+}
+
+function handleCollision(hitWord){
+  if (hitWord.isConcept) {
+    triggerQuiz(hitWord.conceptData);
+  } else {
+    loseLife(`Du körde på ordet "${hitWord.text}" som är ett irrelevant ord!`);
+  }
+}
+
+function loseLife(reason){
+  lives--;
+  combo = 0;
+  spawnParticles(car.x + car.width / 2, car.y, "#ef4444");
+  shake = 12;
+  playTone(120, 0.3, "sawtooth");
+  updateLivesDisplay();
+
+  if (lives <= 0) {
+    triggerGameOver(reason);
+  } else {
+    invulnFrames = 90;
+    showToast(reason + ` Du har ${lives} liv kvar.`);
+  }
+}
+
+// ================= PARTIKLAR & POPUPS =================
+function spawnParticles(x, y, color){
+  for (let i = 0; i < 18; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 4;
+    particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 30 + Math.random() * 20, color });
+  }
+}
+function updateParticles(){
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+function drawParticles(){
+  particles.forEach(p => {
+    ctx.globalAlpha = Math.max(p.life / 50, 0);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+  });
+  ctx.globalAlpha = 1;
+}
+function spawnScorePopup(x, y, text, color){
+  scorePopups.push({ x, y, text, color, life: 60 });
+}
+function updateScorePopups(){
+  for (let i = scorePopups.length - 1; i >= 0; i--) {
+    const p = scorePopups[i];
+    p.y -= 1; p.life--;
+    if (p.life <= 0) scorePopups.splice(i, 1);
+  }
+}
+function drawScorePopups(){
+  scorePopups.forEach(p => {
+    ctx.globalAlpha = Math.max(p.life / 60, 0);
+    ctx.fillStyle = p.color;
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(p.text, p.x, p.y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ================= RITA GRAFIK =================
+function draw(){
+  ctx.save();
+  if (shake > 0) {
+    const dx = (Math.random() - 0.5) * shake;
+    const dy = (Math.random() - 0.5) * shake;
+    ctx.translate(dx, dy);
+    shake *= 0.85;
+    if (shake < 0.4) shake = 0;
+  }
+
+  ctx.fillStyle = "#374151"; ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
+
+  ctx.fillStyle = "#9ca3af";
+  for (let i = 0; i < canvas.height; i += 60) {
+    let offset = (runTime * baseSpeed * 0.5) % 60;
+    ctx.fillRect(canvas.width / 2 - 5, i + offset - 60, 10, 30);
+  }
+
+  // Bil med lite invulnerability-blink
+  if (invulnFrames <= 0 || Math.floor(invulnFrames / 6) % 2 === 0) {
+    ctx.fillStyle = "#ef4444"; ctx.fillRect(car.x, car.y, car.width, car.height);
+    ctx.fillStyle = "#87ceeb"; ctx.fillRect(car.x + 5, car.y + 10, car.width - 10, 15);
+    ctx.fillStyle = "#111827";
+    ctx.fillRect(car.x - 3, car.y + 8, 5, 14);
+    ctx.fillRect(car.x + car.width - 2, car.y + 8, 5, 14);
+    ctx.fillRect(car.x - 3, car.y + car.height - 22, 5, 14);
+    ctx.fillRect(car.x + car.width - 2, car.y + car.height - 22, 5, 14);
+  }
+
+  for (let w of activeWords) {
+    ctx.fillStyle = w.isConcept ? "#fff" : "#fff";
+    ctx.fillRect(w.x, w.y, w.width, w.height);
+    ctx.strokeStyle = w.isConcept ? "#10b981" : "#ef4444";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(w.x, w.y, w.width, w.height);
+    ctx.fillStyle = "#000"; ctx.font = "bold 15px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(w.text, w.x + w.width / 2, w.y + w.height / 2);
+  }
+
+  drawParticles();
+  drawScorePopups();
+  ctx.restore();
+}
+
+function gameLoop(){
+  update();
+  draw();
+  if (!isGameOver) requestAnimationFrame(gameLoop);
+}
+
+// ================= QUIZ =================
+function triggerQuiz(concept){
+  isPaused = true;
+  document.getElementById("quizModal").style.display = "block";
+  document.getElementById("questionText").innerText = `Vad betyder "${concept.word}"?`;
+
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+
+  let answers = [concept.def];
+  let otherConcepts = currentTrack.concepts.filter(c => c.word !== concept.word);
+  otherConcepts.sort(() => 0.5 - Math.random());
+
+  if (otherConcepts.length > 0) answers.push(otherConcepts[0].def);
+  if (otherConcepts.length > 1) answers.push(otherConcepts[1].def);
+
+  answers.sort(() => 0.5 - Math.random());
+
+  answers.forEach(answer => {
+    let btn = document.createElement("button");
+    btn.className = "btn";
+    if (answer.length > 60) btn.style.fontSize = "14px";
+
+    btn.innerText = answer;
+    btn.onclick = () => {
+      document.getElementById("quizModal").style.display = "none";
+      if (answer === concept.def) {
+        combo++;
+        const bonus = 500 + Math.min(combo - 1, 10) * 100;
+        distance += bonus;
+        spawnScorePopup(car.x + car.width / 2, car.y - 10, "+" + bonus, "#10b981");
+        spawnParticles(car.x + car.width / 2, car.y, "#10b981");
+        playTone(880, 0.15, "sine");
+        if (combo > 1) showToast(`Rätt! ${combo} i följd 🔥 (+${bonus}m)`);
+        isPaused = false;
+      } else {
+        playTone(200, 0.3, "square");
+        loseLife(`Fel svar! Rätt förklaring till "${concept.word}" är:\n"${concept.def}"`);
+        if (!isGameOver) isPaused = false;
+      }
+    };
+    container.appendChild(btn);
+  });
+}
+
+// ================= GAME OVER & SUPABASE =================
+function triggerGameOver(reason){
+  isGameOver = true;
+  document.getElementById("gameOverModal").style.display = "block";
+  document.getElementById("gameOverReason").innerText = reason;
+  document.getElementById("finalScore").innerText = Math.floor(distance);
+  document.getElementById("loadingMsg").innerText = "";
+  playTone(90, 0.5, "sawtooth");
+  loadHighscores();
+}
+
+async function loadHighscores(){
+  let tbody = document.getElementById("highscoreBody");
+  tbody.innerHTML = "<tr><td colspan='3'>Hämtar poäng...</td></tr>";
+
+  try {
+    let response = await fetch(`${dbUrl}?select=name,score&order=score.desc&limit=10`, {
+      method: 'GET',
+      headers: dbHeaders
+    });
+    if (!response.ok) {
+      let detail = "";
+      try { const errJson = await response.json(); detail = errJson.message || JSON.stringify(errJson); } catch(e) {}
+      throw new Error(`HTTP ${response.status}${detail ? " – " + detail : ""}`);
+    }
+
+    let data = await response.json();
+    tbody.innerHTML = "";
+    if (data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='3'>Inga rekord ännu! Bli den första!</td></tr>";
+    } else {
+      data.forEach((s, index) => {
+        tbody.innerHTML += `<tr><td>${index + 1}</td><td>${s.name}</td><td>${s.score} m</td></tr>`;
+      });
+    }
+  } catch (error) {
+    console.error("Fel vid hämtning:", error);
+    tbody.innerHTML = `<tr><td colspan='3'>Kunde inte hämta poäng.<br><small>${(error && error.message) || error}</small></td></tr>`;
+  }
+}
+
+async function saveHighscore(){
+  let name = document.getElementById("playerName").value.trim();
+  if (!name) { alert("Du måste skriva in ett namn för att spara!"); return; }
+
+  let finalScore = Math.floor(distance);
+  document.getElementById("loadingMsg").innerText = "Sparar poäng...";
+  document.getElementById("submitSection").style.display = "none";
+
+  try {
+    let response = await fetch(dbUrl, {
+      method: 'POST',
+      headers: dbHeaders,
+      body: JSON.stringify({ name: name, score: finalScore })
+    });
+    if (!response.ok) {
+      let detail = "";
+      try { const errJson = await response.json(); detail = errJson.message || JSON.stringify(errJson); } catch(e) {}
+      throw new Error(`HTTP ${response.status}${detail ? " – " + detail : ""}`);
+    }
+
+    document.getElementById("loadingMsg").innerText = "Sparat!";
+    await loadHighscores();
+    await refreshMenuHighscore();
+    setTimeout(startGame, 3000);
+  } catch (error) {
+    console.error("Fel vid sparning:", error);
+    document.getElementById("loadingMsg").innerText = "Kunde inte spara: " + ((error && error.message) || error);
+    document.getElementById("submitSection").style.display = "block";
+  }
+}
+
+// ================= TOUCH-KONTROLLER =================
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+["touchstart", "mousedown"].forEach(ev => {
+  leftBtn.addEventListener(ev, (e) => { e.preventDefault(); keys.ArrowLeft = true; });
+  rightBtn.addEventListener(ev, (e) => { e.preventDefault(); keys.ArrowRight = true; });
+});
+["touchend", "touchcancel", "mouseup", "mouseleave"].forEach(ev => {
+  leftBtn.addEventListener(ev, () => { keys.ArrowLeft = false; });
+  rightBtn.addEventListener(ev, () => { keys.ArrowRight = false; });
+});
+
+// ================= INIT =================
+document.getElementById("addTrackBtn").onclick = openTrackEditor;
+document.getElementById("startBtn").onclick = () => {
+  if (!selectedTrackId) return;
+  document.getElementById("menuScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "block";
+  startGame();
+};
+document.getElementById("menuShowAllBtn").onclick = openAllScores;
+document.getElementById("gameOverShowAllBtn").onclick = openAllScores;
+document.getElementById("menuBtn").onclick = () => {
+  isGameOver = true;
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("menuScreen").style.display = "block";
+  refreshMenuHighscore();
+};
+document.getElementById("muteBtn").onclick = () => {
+  muted = !muted;
+  document.getElementById("muteBtn").innerText = muted ? "🔇" : "🔊";
+};
+
+initTracks();
+refreshMenuHighscore();
+</script>
+</body>
+</html>
