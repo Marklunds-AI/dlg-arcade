@@ -44,6 +44,9 @@ const icon = (name, size = 20, color = 'currentColor') =>
 
 /* ---------- sidhuvud och sidfot ---------- */
 function renderChrome(active) {
+  const file = location.pathname.split('/').pop() || 'index.html';
+  const page = file.startsWith('spela') ? 'spela' : file.startsWith('verktyg') ? 'verktyg' : 'start';
+  trackView(page, page === 'spela' ? (new URLSearchParams(location.search).get('spel') || FEATURED_ID) : null);
   const header = $('#site-header');
   if (header) header.innerHTML = `
     <div class="wrap">
@@ -119,3 +122,18 @@ function rowsHTML(rows, showGame) {
 }
 
 const statusHTML = msg => `<div class="status">${esc(msg)}</div>`;
+
+/* ---------- anonym besöksräknare ----------
+   Sparar bara sida, spel och enhetstyp. Inga cookies, inget ID, ingen IP i vår tabell. */
+function trackView(page, game = null) {
+  try {
+    if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:') return;
+    const w = Math.min(screen.width, window.innerWidth || screen.width);
+    const device = w < 600 ? 'mobil' : w < 1024 ? 'surfplatta' : 'dator';
+    fetch(`${SUPABASE_URL}/rest/v1/PageViews`, {
+      method: 'POST', keepalive: true,
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ page, game, device })
+    }).catch(() => {});
+  } catch (e) {}
+}
