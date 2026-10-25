@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Begreppsslukaren – DLG Arcade</title>
+<link rel="icon" href="../assets/img/favicon.svg">
+<style>
+  .sl-stage canvas{touch-action:none}
+  .sl-farger{display:flex;flex-wrap:wrap;gap:8px}
+  .sl-farger button{width:44px;height:44px;border-radius:50%;border:3px solid transparent;box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
+  .sl-farger button[aria-pressed="true"]{border-color:#242422;transform:scale(1.08)}
+  .sl-kod{font-size:28px !important;font-weight:900;letter-spacing:.3em;text-transform:uppercase;text-align:center}
+  .sl-fel{color:#A43033;font-weight:700;margin:0}
+  .sl-lobby{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center;background:rgba(36,36,34,.55)}
+  .sl-lobby .blobb{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;padding:8px;word-break:break-word;border:4px solid #fff}
+  .sl-lobby h2{margin:0;font-size:clamp(24px,5vw,40px);font-weight:900;letter-spacing:-.03em}
+  .sl-lobby p{margin:0;color:#F8EAA4;font-family:"Inria Serif",Georgia,serif;font-size:20px}
+  .sl-natstatus{position:absolute;right:8px;bottom:8px;z-index:3;font-size:12px;background:rgba(0,0,0,.45);padding:4px 8px;border-radius:999px;pointer-events:none}
+</style>
+</head>
+<body>
+<script src="../assets/js/banor.js"></script>
+<script src="../assets/js/dlg-spel.js"></script>
+<script src="../assets/js/slukaren.js"></script>
+<script src="../assets/js/slukaren-natet.js"></script>
+<script>
+/* Begreppsslukaren – ät rätt begrepp och väx.
+   Fritt spel: allt körs här, med 9 bots.
+   Klassrum (?rum=KOD eller "Gå med i klassrum"): lärarens tavla kör spelet, den här sidan
+   skickar bara styrningen och ritar det tavlan skickar. Se assets/js/slukaren-natet.js. */
+
+const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js';
+const q = new URLSearchParams(location.search);
+let aktiv = null;   // pågående spel (fritt eller klassrum), har stopp()
+
+DLGSpel.start({
+  id: 'slukaren',
+  titel: 'Begreppsslukaren',
+  ingress: 'Ät rätt begrepp och väx. Ingen åker ut – men den som kan sina begrepp tar över kartan.',
+  instruktion: [
+    'Frågan visas stort och allt står stilla. Läs!',
+    'Sedan dyker svarsbitar upp på kartan. Ät den med rätt begrepp: du växer och får superkraft i 6 sekunder.',
+    'Med superkraft kan du krocka med andra och slå loss 15 % av deras massa. Bitarna kan vem som helst plocka upp.',
+    'Fel bit gör att du krymper 10 % och blir långsam en stund. Små smulor ger lite extra.',
+    'Styr med musen, piltangenterna/WASD, eller dra med fingret var som helst på skärmen.'
+  ],
+  nivaText: { latt: 'Bottarna svarar ofta fel, få fel bitar', normal: 'Lagom smarta bottar', hardcore: 'Kloka bottar, många fel bitar' },
+  maxPoang: 100000,
+  knappar: [],
+  startKnappar: [
+    { text: 'Gå med i klassrum', klick: () => visaKlassrum() },
+    { text: 'Lärare: skapa rum', klick: () => window.open('begreppsslukaren-larare.html', '_blank', 'noopener') }
+  ],
+  starta: frittSpel,
+  onSlut() { stoppa(); }
+});
+
+function stoppa() { if (aktiv) { aktiv.stopp(); aktiv = null; } }
+
+/* ---------- gemensamt: canvas, frågevy och storlek ---------- */
+function byggScen(stage) {
+  stage.innerHTML = '<canvas></canvas>';
+  stage.classList.add('sl-stage');
+  const cv = stage.querySelector('canvas'), c2 = cv.getContext('2d');
+  const s = { cv, c2, W: 0, H: 0, vy: new SL.FragaVy(stage), kam: {} };
+  s.storlek = () => {
+    const r = stage.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    s.W = r.width; s.H = r.height; cv.width = s.W * dpr; cv.height = s.H * dpr;
+    c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  addEventListener('resize', s.storlek);
+  s.storlek();
+  s.jagPaSkarm = b => b && { x: (b.x - s.kam.x) * s.kam.z + s.W / 2, y: (b.y - s.kam.y) * s.kam.z + s.H / 2, r: SL.radie(b.m) * s.kam.z };
+  s.stopp = () => removeEventListener('resize', s.storlek);
+  return s;
+}
+
+/* ======================================================================
+   Fritt spel med bots
+   ====================================================================== */
+function frittSpel(ctx) {
+  stoppa();
+  const sc = byggScen(ctx.stage);
+  const minFarg = DLGSpel.store.get('slukaren_farg', SL.FARGER[0].hex);
+  const varld = new SL.Varld({
+    bana: ctx.bana, fragor: ctx.fragor, niva: ctx.niva,
+    slutVillkor: { typ: 'fragor', antal: 10 },
+    raknaSvar: b => b === jag,
+    on: handelse
+  });
+  const jag = varld.laggTill({ namn: (DLGSpel.store.get('dlg_alias', '') || 'Du').slice(0, 16), farg: minFarg });
+  const andraFarger = SL.FARGER.map(f => f.hex).filter(f => f !== minFarg);
+  SL.Bot.namn(9).forEach((namn, i) => varld.laggTill({ namn, farg: andraFarger[i % andraFarger.length], bot: true }));
+  varld.start();
+  window.__slukaren = varld;   // för testerna
+
+  const styr = new SL.Styrning(sc.cv, () => sc.jagPaSkarm(jag));
+  let slut = false, last = performance.now(), raf = 0;
+
+  function handelse(typ, d) {
+    if (typ === 'ratt' && d.b === jag) { DLGSpel.ljud('ratt'); ctx.toast('+' + Math.round(d.tillvaxt) + ' ⚡'); }
+    else if (typ === 'fel' && d.b === jag) { DLGSpel.ljud('fel'); ctx.toast('Fel! −10 %', '#ff6b6b'); }
+    else if (typ === 'stold' && d.offer === jag) { DLGSpel.ljud('traff'); ctx.toast('Du blev tagen!', '#ff6b6b'); }
+    else if (typ === 'stold' && d.jag === jag) { DLGSpel.ljud('small'); }
+    else if (typ === 'fas' && d.fas === 'frys') DLGSpel.ljud('poang');
+    else if (typ === 'slut') {
+      slut = true;
+      const plats = varld.placering(jag);
+      setTimeout(() => ctx.slut(Math.round(jag.m) * 10, { rubrik: `Plats ${plats} av ${varld.blobbar.length}` }), 600);
+    }
+  }
+
+  function loop(nu) {
+    if (slut && !aktiv) return;
+    const dt = Math.min(0.05, (nu - last) / 1000); last = nu;
+    if (!DLGSpel.pausad && !slut) {
+      const r = styr.riktning();
+      varld.styr(jag.id, r.x, r.y);
+      varld.blobbar.forEach(b => b.bot && SL.Bot.styr(varld, b, dt));
+      varld.steg(dt);
+    }
+    SL.kamera(sc.kam, jag, sc.W, sc.H, dt);
+    SL.rita(sc.c2, sc.W, sc.H, { L: varld.L, blobbar: varld.blobbar, smulor: varld.smulor.values(), bitar: varld.bitar.values() }, sc.kam, { jag: jag.id, joy: styr.joy });
+    sc.vy.visa({ fas: varld.fas, nr: varld.nr, tot: varld.antalFragor, text: varld.fraga && varld.fraga.text, facit: varld.forraSvar,
+      fasTid: varld.fasTid, jaktTid: varld.jaktTid, tidKvar: varld.tidKvar, pausad: false });
+    ctx.setPoang(Math.round(jag.m) * 10);
+    ctx.hud('massa', 'Massa', Math.round(jag.m));
+    ctx.hud('plats', 'Plats', varld.placering(jag) + '/' + varld.blobbar.length);
+    raf = requestAnimationFrame(loop);
+  }
+  raf = requestAnimationFrame(loop);
+  aktiv = { stopp() { slut = true; cancelAnimationFrame(raf); sc.stopp(); } };
+}
+
+/* ======================================================================
+   Klassrum – gå med
+   ====================================================================== */
+function laddaSupabase() {
+  if (window.supabase) return Promise.resolve();
+  return new Promise((ok, fel) => {
+    const s = document.createElement('script'); s.src = SUPABASE_JS; s.onload = ok;
+    s.onerror = () => fel(new Error('Kunde inte ladda anslutningen. Kontrollera nätet.'));
+    document.head.appendChild(s);
+  });
+}
+const sparad = () => DLGSpel.store.get('slukaren_elev', {});
+
+function visaKlassrum(kodForval) {
+  const sp = sparad();
+  let farg = sp.farg || DLGSpel.store.get('slukaren_farg', SL.FARGER[0].hex);
+  const kod = SLNatet.stadaKod(kodForval || sp.kod || '');
+  const o = DLGSpel.overlay(`
+    <h1>Gå med i <span>klassrum</span></h1>
+    <div class="dlg-box">
+      <label class="dlg-small" for="sl-kod">Rummets kod (står på tavlan)</label>
+      <input class="dlg-input sl-kod" id="sl-kod" maxlength="4" autocomplete="off" autocapitalize="characters" value="${DLGSpel.esc(kod)}" placeholder="ABCD">
+      <label class="dlg-small" for="sl-alias">Ditt alias (max 16 tecken)</label>
+      <input class="dlg-input" id="sl-alias" maxlength="16" autocomplete="off" value="${DLGSpel.esc(sp.alias || '')}" placeholder="t.ex. Begreppsbjörnen">
+      <p class="dlg-small">Använd inte ditt riktiga fullständiga namn. Läraren kan ta bort olämpliga alias.</p>
+      <span class="dlg-small">Välj färg</span>
+      <div class="sl-farger" id="sl-farger">${SL.FARGER.map(f => `<button style="background:${f.hex}" data-f="${f.hex}" aria-label="${f.namn}" aria-pressed="${f.hex === farg}"></button>`).join('')}</div>
+      <p class="sl-fel" id="sl-msg" role="alert"></p>
+      <div class="dlg-row"><button class="dlg-btn" id="sl-gamed">Gå med ▶</button><button class="dlg-btn small dark" id="sl-tillbaka">Tillbaka</button></div>
+    </div>`);
+  o.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
+    farg = b.dataset.f; o.querySelectorAll('[data-f]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  const kodIn = o.querySelector('#sl-kod');
+  kodIn.oninput = () => { const p = kodIn.selectionStart; kodIn.value = kodIn.value.toUpperCase(); kodIn.setSelectionRange(p, p); };
+  o.querySelector('#sl-tillbaka').onclick = () => { history.replaceState(null, '', location.pathname); DLGSpel.visaStart(); };
+  const msg = o.querySelector('#sl-msg'), knapp = o.querySelector('#sl-gamed');
+  const gaMed = async () => {
+    const k = SLNatet.stadaKod(kodIn.value), alias = o.querySelector('#sl-alias').value.replace(/\s+/g, ' ').trim().slice(0, 16);
+    if (k.length !== 4) { msg.textContent = 'Koden har fyra tecken.'; kodIn.focus(); return; }
+    if (!alias) { msg.textContent = 'Skriv ett alias.'; o.querySelector('#sl-alias').focus(); return; }
+    knapp.disabled = true; msg.textContent = ''; knapp.textContent = 'Ansluter…';
+    try {
+      await laddaSupabase();
+      const pid = sp.kod === k && sp.pid ? sp.pid : SLNatet.nyPid();
+      DLGSpel.store.set('slukaren_elev', { kod: k, pid, alias, farg });
+      DLGSpel.store.set('slukaren_farg', farg);
+      await klassrum(k, pid, alias, farg);
+    } catch (e) {
+      msg.textContent = e.message; knapp.disabled = false; knapp.textContent = 'Gå med ▶';
+    }
+  };
+  knapp.onclick = gaMed;
+  o.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') gaMed(); }));
+  (kod.length === 4 ? o.querySelector('#sl-alias') : kodIn).focus();
+}
+
+/* ======================================================================
+   Klassrum – spela. Tavlan är sanningen; här ritas det den skickar.
+   ====================================================================== */
+async function klassrum(kod, pid, alias, farg) {
+  const sp = new SLNatet.Spegel();
+  let jagId = null, slut = false, raf = 0, sc = null, styr = null, lobbyEl = null, statusEl = null, ateransluter = false;
+  const handelser = {
+    data(p) {
+      if (p.t === 'e') return personlig(p);
+      if (p.t === 'slut') return visaSlut(p);
+      if (p.t === 'borttagen') return borttagen();
+      if (p.t === 'fas' && p.f === 'frys' && sp.fas.f !== 'frys') DLGSpel.ljud('poang');
+      sp.ta(p);
+    },
+    status(lage) {
+      if (!statusEl) return;
+      statusEl.textContent = lage === 'rtc' ? '● Ansluten' : lage === 'reserv' ? '● Ansluten (reservläge)' : '○ Tappade anslutningen – ansluter igen…';
+      if (lage === 'ner') ateranslut();
+    }
+  };
+  const elev = new SLNatet.Elev(kod, pid, handelser, { reserv: q.get('rtc') === '0' });
+  const v = await elev.anslut({ alias, farg });   // kastar fel om rummet inte finns eller aliaset är upptaget
+  jagId = v.id;
+  window.__elev = { elev, sp, get jagId() { return jagId; }, get sc() { return sc; } };   // för testerna
+
+  stoppa();
+  DLGSpel.startaExtern();
+  history.replaceState(null, '', location.pathname + '?rum=' + kod);
+  sc = byggScen(DLGSpel.stage);
+  lobbyEl = document.createElement('div'); lobbyEl.className = 'sl-lobby';
+  lobbyEl.innerHTML = `<div class="blobb" style="background:${DLGSpel.esc(farg)};color:${['#A43033', '#205B4F', '#848AC4'].includes(farg) ? '#fff' : '#242422'}">${DLGSpel.esc(alias)}</div>
+    <h2>Du är med i rum ${DLGSpel.esc(kod)}!</h2><p>Väntar på att läraren startar… <b class="antal"></b></p>`;
+  DLGSpel.stage.appendChild(lobbyEl);
+  statusEl = document.createElement('div'); statusEl.className = 'sl-natstatus'; statusEl.textContent = '○ Ansluter…';
+  DLGSpel.stage.appendChild(statusEl);
+  styr = new SL.Styrning(sc.cv, () => sc.jagPaSkarm(sp.vy(0).blobbar.find(b => b.id === jagId)));
+
+  async function ateranslut() {
+    if (ateransluter || slut) return;
+    ateransluter = true;
+    for (let f = 0; f < 20 && !slut; f++) {
+      try { const nv = await elev.anslut({ alias, farg }); jagId = nv.id; break; }
+      catch (e) { if (/tagits bort/.test(e.message)) return borttagen(); await new Promise(r => setTimeout(r, 2000)); }
+    }
+    ateransluter = false;
+  }
+
+  function personlig(p) {
+    if (p.k === 'ratt') { DLGSpel.ljud('ratt'); DLGSpel.toast('+' + p.v + ' ⚡'); }
+    else if (p.k === 'fel') { DLGSpel.ljud('fel'); DLGSpel.toast('Fel! −10 %', '#ff6b6b'); }
+    else if (p.k === 'tagen') { DLGSpel.ljud('traff'); DLGSpel.toast('Du blev tagen!', '#ff6b6b'); }
+    else if (p.k === 'tog') DLGSpel.ljud('small');
+  }
+
+  let last = performance.now();
+  function loop(nu) {
+    if (slut) return;
+    const dt = Math.min(0.05, (nu - last) / 1000); last = nu;
+    const vy = sp.vy(dt), jag = vy.blobbar.find(b => b.id === jagId);
+    const f = sp.fas;
+    lobbyEl.hidden = f.f !== 'lobby';
+    if (f.f === 'lobby') lobbyEl.querySelector('.antal').textContent = sp.rost.size ? `(${sp.rost.size} med)` : '';
+    const r = styr.riktning();
+    elev.styr(f.f === 'jakt' && !f.p ? r.x : 0, f.f === 'jakt' && !f.p ? r.y : 0, dt);
+    SL.kamera(sc.kam, jag, sc.W, sc.H, dt);
+    SL.rita(sc.c2, sc.W, sc.H, vy, sc.kam, { jag: jagId, joy: styr.joy });
+    sc.vy.visa({ fas: f.f, nr: f.nr, tot: f.tot, text: f.text, facit: f.facit, fasTid: sp.fasTid(), jaktTid: f.jt || 15,
+      tidKvar: sp.tidKvar(), pausad: !!f.p, pausText: 'Pausat av läraren' });
+    if (jag) {
+      DLGSpel.setPoang(Math.round(jag.m) * 10);
+      DLGSpel.hud('massa', 'Massa', Math.round(jag.m));
+      DLGSpel.hud('plats', 'Plats', (1 + vy.blobbar.filter(b => b.m > jag.m).length) + '/' + vy.blobbar.length);
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  raf = requestAnimationFrame(loop);
+
+  function stopp() { slut = true; cancelAnimationFrame(raf); sc && sc.stopp(); elev.stang(); }
+  aktiv = { stopp };
+
+  function tillStart() { stoppa(); DLGSpel.avslutaExtern(); history.replaceState(null, '', location.pathname); DLGSpel.visaStart(); }
+
+  function borttagen() {
+    stopp(); aktiv = null;
+    DLGSpel.store.set('slukaren_elev', {});
+    const o = DLGSpel.overlay(`<h1>Du är <span>borttagen</span></h1><p class="dlg-lead">Läraren har tagit bort dig från rummet. Prata med läraren om du tror att det blev fel.</p>
+      <div class="dlg-row"><button class="dlg-btn" id="sl-ok">Till startsidan</button></div>`);
+    o.querySelector('#sl-ok').onclick = tillStart;
+  }
+
+  function visaSlut(p) {
+    stopp(); aktiv = null;
+    DLGSpel.ljud('slut');
+    const andel = p.ratt + p.fel ? Math.round(100 * p.ratt / (p.ratt + p.fel)) : 0;
+    const o = DLGSpel.overlay(`
+      <h1>Plats <span>${p.plats}</span> av ${p.n}</h1>
+      <div class="dlg-score">${DLGSpel.fmt(p.massa)}</div><p class="dlg-lead" style="margin-top:-8px">i massa</p>
+      <div class="dlg-kpi">
+        <div><b>${p.ratt}</b><span>rätt</span></div>
+        <div><b>${p.fel}</b><span>fel</span></div>
+        <div><b>${andel} %</b><span>träffsäkerhet</span></div>
+      </div>
+      ${p.missade.length ? `<div class="dlg-box"><h2>Begrepp att öva på</h2><div class="dlg-miss">${p.missade.map(b => `<div><b>${DLGSpel.esc(b.ord)}</b>${DLGSpel.esc(b.def)}</div>`).join('')}</div></div>`
+        : (p.ratt ? '<div class="dlg-box"><h2>Inga missar – snyggt!</h2></div>' : '')}
+      <p class="dlg-small" style="color:var(--sky)">Klassrumsrundor sparas inte i topplistan.</p>
+      <div class="dlg-row"><button class="dlg-btn" id="sl-igen">Gå med i nästa omgång</button><button class="dlg-btn ghost" id="sl-ok">Till startsidan</button></div>`);
+    o.querySelector('#sl-ok').onclick = tillStart;
+    o.querySelector('#sl-igen').onclick = () => { DLGSpel.avslutaExtern(); visaKlassrum(kod); };
+  }
+}
+
+if (q.get('rum')) visaKlassrum(q.get('rum'));
+</script>
+</body>
+</html>

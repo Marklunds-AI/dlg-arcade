@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Begreppsslukaren · Klassrum – DLG Arcade</title>
+<link rel="icon" href="../assets/img/favicon.svg">
+<style>
+  html,body{overflow:auto !important;height:auto;min-height:100%}
+  body.tavla{overflow:hidden !important;height:100%}
+  .lr-top{display:flex;align-items:center;gap:14px;padding:12px 20px;background:#242422}
+  .lr-top .logo{font-weight:900;font-size:22px;letter-spacing:-.03em}
+  .lr-top .logo span{color:var(--yellow)}
+  .lr-top .info{margin-left:auto;font-weight:700;color:var(--sky);font-size:18px}
+  .lr-top .info b{color:var(--yellow);letter-spacing:.12em}
+  .lr-wrap{max-width:1100px;margin:0 auto;padding:24px 20px 60px;display:flex;flex-direction:column;gap:16px}
+  .lr-wrap h1{margin:0;font-size:clamp(36px,5vw,60px);font-weight:900;letter-spacing:-.045em;line-height:1}
+  .lr-wrap h1 span{color:var(--yellow)}
+  .lr-falt{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .lr-num{width:90px !important;text-align:center;font-weight:700}
+  .lr-err{color:var(--red);font-weight:700;margin:0}
+  /* lobby */
+  .lr-lobby{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;padding:24px;min-height:calc(100vh - 56px)}
+  .lr-kodruta{background:#fff;color:var(--black);padding:28px 32px;display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .lr-kodruta .k{font-size:clamp(18px,1.6vw,28px);font-weight:700;color:var(--slate)}
+  .lr-kodruta .url{font-size:clamp(22px,2.3vw,44px);font-weight:900;color:var(--navy);word-break:break-all;letter-spacing:-.02em}
+  .lr-kodruta .kod{font-size:clamp(110px,15vw,260px);font-weight:900;letter-spacing:.12em;line-height:1;color:var(--black);font-variant-numeric:tabular-nums}
+  .lr-kodruta .direkt{font-size:15px;color:var(--slate);word-break:break-all}
+  .lr-lista{display:flex;flex-direction:column;gap:14px}
+  .lr-lista h2{margin:0;font-size:clamp(24px,2vw,36px);font-weight:900}
+  .lr-chips{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+  .lr-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:999px;padding:6px 6px 6px 8px;font-weight:700;font-size:clamp(15px,1.2vw,20px)}
+  .lr-chip i{width:20px;height:20px;border-radius:50%;flex:none;border:2px solid #fff}
+  .lr-chip.av{opacity:.45}
+  .lr-chip button{border:0;background:rgba(255,255,255,.18);color:#fff;border-radius:50%;width:28px;height:28px;font-size:15px;line-height:1}
+  .lr-chip button:hover{background:var(--red)}
+  @media (max-width:900px){.lr-lobby{grid-template-columns:1fr}}
+  /* tavlan */
+  .lr-tavla{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(260px,20vw,380px);grid-template-rows:auto minmax(0,1fr)}
+  .lr-tavla .lr-top{grid-column:1/-1}
+  .lr-scen{position:relative;min-height:0}
+  .lr-scen canvas{position:absolute;inset:0;width:100%;height:100%}
+  .lr-sida{background:#242422;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+  .lr-kort h3{margin:0 0 6px;font-size:clamp(15px,1.1vw,20px);text-transform:uppercase;letter-spacing:.08em;color:var(--yellow)}
+  .lr-kort ol{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+  .lr-kort li{display:grid;grid-template-columns:26px 18px 1fr auto;align-items:center;gap:8px;font-size:clamp(16px,1.25vw,24px);font-weight:700;font-variant-numeric:tabular-nums}
+  .lr-kort li i{width:16px;height:16px;border-radius:50%;border:2px solid #fff}
+  .lr-kort li span:first-child{color:var(--grey)}
+  .lr-kort li b{color:var(--yellow)}
+  .lr-kort li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lr-sida details summary{cursor:pointer;font-weight:700;color:var(--sky)}
+  .lr-sida .lr-chips{margin-top:8px}
+  /* slut */
+  .lr-pall{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:12px;text-align:center}
+  .lr-pall div{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .lr-pall .blobb{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;padding:8px;border:4px solid #fff;word-break:break-word;font-size:clamp(14px,1.4vw,22px)}
+  .lr-pall .steg{width:100%;background:var(--yellow);color:var(--black);font-weight:900;font-size:clamp(28px,3vw,52px);padding:8px 0}
+  .lr-pall .massa{color:var(--cream);font-weight:700}
+  .lr-tva{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px}
+  @media (max-width:800px){.lr-tva{grid-template-columns:1fr}}
+  .dlg-miss{max-height:none !important}
+  .dlg-miss div{font-size:clamp(15px,1.1vw,20px)}
+</style>
+</head>
+<body>
+<div id="lr"></div>
+<script src="../assets/js/banor.js"></script>
+<script src="../assets/js/dlg-spel.js"></script>
+<script src="../assets/js/slukaren.js"></script>
+<script src="../assets/js/slukaren-natet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script>
+/* Begreppsslukaren – lärarens tavla.
+   Den här webbläsaren är värd och "sanningen": den kör reglerna (SL.Varld, 20 steg/s) och skickar
+   en kompakt ögonblicksbild ca 10 gånger/s till eleverna. Se assets/js/slukaren-natet.js för nätet. */
+
+DLGSpel.stil();
+const { esc, fmt, store } = DLGSpel;
+const $ = s => document.querySelector(s);
+const root = $('#lr');
+
+const inst = Object.assign({ bana: (window.DLG_BANOR[0] || {}).id, typ: 'fragor', antal: 10, min: 5, jakt: 15, niva: 'normal' }, store.get('slukaren_larare', {}));
+const R = { kod: null, vard: null, varld: null, fragor: null, spelare: new Map(), bannade: new Set(), bannadeAlias: new Set(), tick: 0, raf: 0, skarm: '' };
+window.__larare = R;   // för testerna
+
+const fargText = hex => ['#A43033', '#205B4F', '#848AC4'].includes(hex) ? '#fff' : '#242422';
+const topp = (titel) => `<div class="lr-top"><div class="logo">Begrepps<span>slukaren</span> · Klassrum</div><div class="info">${titel || ''}</div></div>`;
+
+/* ======================================================================
+   1. Skapa rum
+   ====================================================================== */
+function visaSkapa(fel = '') {
+  R.skarm = 'skapa';
+  document.body.className = '';
+  const grupper = {};
+  DLGSpel.allaBanor().forEach(b => { const k = b.egen ? 'Egna banor' : (b.kurs || 'Övrigt'); (grupper[k] = grupper[k] || []).push(b); });
+  if (!DLGSpel.banaById(inst.bana)) inst.bana = DLGSpel.allaBanor()[0].id;
+  root.innerHTML = topp() + `<div class="lr-wrap">
+    <h1>Skapa ett <span>klassrum</span></h1>
+    <p class="dlg-lead">Eleverna går med på mobil eller Chromebook med en kod. Din skärm blir tavlan – visa den på projektorn.</p>
+    <div class="dlg-box"><h2>Bana</h2><div class="dlg-banor">${Object.entries(grupper).map(([k, banor]) => `
+      <div class="dlg-kurs">${esc(k)}</div>
+      <div class="dlg-chips">${banor.map(b => `<button class="dlg-chip" data-b="${esc(b.id)}" aria-pressed="${b.id === inst.bana}">${esc(b.namn)}<small>${b.begrepp.length}</small></button>`).join('')}</div>`).join('')}</div>
+      <p class="dlg-small">Egna banor skapar du på startskärmen i spelet. De finns bara i den här webbläsaren.</p></div>
+    <div class="lr-falt">
+      <div class="dlg-box"><h2>När slutar omgången?</h2>
+        <div class="dlg-chips"><button class="dlg-chip" data-typ="fragor" aria-pressed="${inst.typ === 'fragor'}">Efter antal frågor</button><button class="dlg-chip" data-typ="tid" aria-pressed="${inst.typ === 'tid'}">Efter en tid</button></div>
+        <div class="dlg-row" data-visa="fragor"><input class="dlg-input lr-num" id="lr-antal" type="number" min="3" max="40" value="${inst.antal}"><span>frågor</span></div>
+        <div class="dlg-row" data-visa="tid"><input class="dlg-input lr-num" id="lr-min" type="number" min="1" max="30" value="${inst.min}"><span>minuter</span></div>
+      </div>
+      <div class="dlg-box"><h2>Sekunder per jakt</h2>
+        <div class="dlg-row"><input class="dlg-input lr-num" id="lr-jakt" type="number" min="8" max="45" value="${inst.jakt}"><span>sekunder (standard 15)</span></div>
+        <p class="dlg-small">Före varje jakt står allt still i 4 sekunder medan frågan visas.</p>
+      </div>
+    </div>
+    <div class="dlg-box"><h2>Nivå</h2><div class="dlg-niva">${Object.values(DLGSpel.NIVAER).map(n => `<button class="dlg-chip" data-n="${n.id}" aria-pressed="${n.id === inst.niva}"><span>${n.ikon} ${n.namn}</span><small>${SL.REGLER.felPerRatt[n.id]} felaktiga bitar per rätt</small></button>`).join('')}</div></div>
+    ${fel ? `<p class="lr-err" role="alert">${esc(fel)}</p>` : ''}
+    <div class="dlg-row"><button class="dlg-btn" id="lr-skapa">Skapa rum ▶</button><a class="dlg-btn ghost" href="begreppsslukaren.html">Till fritt spel</a></div>
+  </div>`;
+  const val = (attr, nyckel) => root.querySelectorAll(`[${attr}]`).forEach(b => b.onclick = () => {
+    inst[nyckel] = b.getAttribute(attr);
+    root.querySelectorAll(`[${attr}]`).forEach(x => x.setAttribute('aria-pressed', x === b));
+    visaTyp();
+  });
+  const visaTyp = () => root.querySelectorAll('[data-visa]').forEach(e => e.hidden = e.dataset.visa !== inst.typ);
+  val('data-b', 'bana'); val('data-typ', 'typ'); val('data-n', 'niva'); visaTyp();
+  $('#lr-skapa').onclick = skapaRum;
+}
+
+async function skapaRum() {
+  const tal = (id, min, max, std) => { const v = parseInt($(id).value, 10); return isFinite(v) ? Math.max(min, Math.min(max, v)) : std; };
+  inst.antal = tal('#lr-antal', 3, 40, 10); inst.min = tal('#lr-min', 1, 30, 5); inst.jakt = tal('#lr-jakt', 8, 45, 15);
+  store.set('slukaren_larare', inst);
+  $('#lr-skapa').disabled = true; $('#lr-skapa').textContent = 'Skapar rum…';
+  try {
+    if (!window.supabase) throw new Error('Kunde inte ladda anslutningen (supabase-js). Kontrollera nätet.');
+    R.kod = SLNatet.nyKod();
+    skapaVarld();
+    R.vard = new SLNatet.Vard(R.kod, { hej, upp, ner, data });
+    await R.vard.starta();
+  } catch (e) { return visaSkapa('Kunde inte skapa rummet: ' + e.message); }
+  setInterval(tick, 50);
+  visaLobby();
+}
+
+function skapaVarld() {
+  const bana = DLGSpel.banaById(inst.bana);
+  R.fragor = DLGSpel.skapaFragor(bana);
+  R.varld = new SL.Varld({
+    bana, fragor: R.fragor, niva: inst.niva, jaktTid: inst.jakt, logga: true,
+    slutVillkor: inst.typ === 'tid' ? { typ: 'tid', sek: inst.min * 60 } : { typ: 'fragor', antal: inst.antal },
+    raknaSvar: () => true, on: handelse
+  });
+  R.spelare.forEach(s => { const b = R.varld.laggTill({ id: s.id, namn: s.alias, farg: s.farg }); b.offline = !uppkopplad(s); });
+}
+
+/* ======================================================================
+   Nätet: elever som går med, försvinner och styr
+   ====================================================================== */
+const uppkopplad = s => s.lage === 'rtc' || s.lage === 'reserv';
+const spelareFor = id => [...R.spelare.values()].find(s => s.id === id);
+
+function hej(pid, p) {
+  const alias = String(p.alias || '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
+  const farg = SL.FARGER.some(f => f.hex === p.farg) ? p.farg : SL.FARGER[0].hex;
+  const nej = orsak => R.vard.tillElev(pid, { t: 'nej', orsak });
+  if (!alias) return nej('Skriv ett alias.');
+  if (R.bannade.has(pid) || R.bannadeAlias.has(alias.toLowerCase())) return nej('Du har tagits bort från rummet av läraren.');
+  let s = R.spelare.get(pid);
+  if (!s) {
+    // samma alias som någon som tappat anslutningen = samma elev som kommer tillbaka
+    const annan = [...R.spelare.values()].find(x => x.alias.toLowerCase() === alias.toLowerCase());
+    if (annan) {
+      if (uppkopplad(annan)) return nej('Aliaset används redan i rummet. Välj ett annat.');
+      R.spelare.delete(annan.pid); R.vard.koppla(annan.pid);
+      annan.pid = pid; R.spelare.set(pid, annan); s = annan;
+    }
+  }
+  const v = R.varld;
+  if (!s) {
+    if (v.fas === 'slut') return nej('Omgången är slut. Vänta tills läraren startar en ny.');
+    if (R.spelare.size >= 40) return nej('Rummet är fullt.');
+    const b = v.laggTill({ namn: alias, farg }); b.offline = true;
+    s = { pid, id: b.id, alias, farg, lage: 'ny' };
+    R.spelare.set(pid, s);
+  } else if (v.fas === 'lobby') {
+    s.alias = alias; s.farg = farg;
+    const b = v.blobb(s.id); if (b) { b.namn = alias; b.farg = farg; }
+  }
+  R.vard.tillElev(pid, { t: 'valkommen', id: s.id, kod: R.kod });
+  uppdateraListor();
+}
+function upp(pid, lage) {
+  const s = R.spelare.get(pid); if (!s) return;
+  s.lage = lage;
+  const b = R.varld.blobb(s.id); if (b) b.offline = false;
+  if (lage === 'rtc') { R.vard.skicka(pid, SLNatet.Paket.fas(R.varld)); R.vard.skicka(pid, SLNatet.Paket.full(R.varld, 'init')); }
+  R.vard.skickaRtc(SLNatet.Paket.rost(R.varld));
+  uppdateraListor();
+}
+function ner(pid) {
+  const s = R.spelare.get(pid); if (!s) return;
+  s.lage = 'ner';
+  const b = R.varld.blobb(s.id); if (b) { b.offline = true; b.styr = { x: 0, y: 0 }; }
+  uppdateraListor();
+}
+function data(pid, p) {
+  const s = R.spelare.get(pid);
+  if (!s || p.t !== 'i') return;
+  const k = n => Math.max(-100, Math.min(100, Number(n) || 0)) / 100;
+  R.varld.styr(s.id, k(p.x), k(p.y));
+}
+function taBort(pid) {
+  const s = R.spelare.get(pid); if (!s) return;
+  R.bannade.add(pid); R.bannadeAlias.add(s.alias.toLowerCase());
+  R.vard.skicka(pid, { t: 'borttagen' });
+  R.vard.tillElev(pid, { t: 'borttagen' });
+  setTimeout(() => R.vard.koppla(pid), 400);
+  R.varld.taBort(s.id);
+  R.spelare.delete(pid);
+  R.vard.skickaRtc(SLNatet.Paket.rost(R.varld));
+  uppdateraListor();
+}
+
+// Personliga händelser går bara via WebRTC (reservläget sparar på Supabase-meddelanden).
+function tillSpelare(id, msg) { const s = spelareFor(id); if (s && s.lage === 'rtc') R.vard.skicka(s.pid, msg); }
+
+function handelse(typ, d) {
+  const v = R.varld;
+  if (typ === 'fas') {
+    R.vard.skickaRtc(SLNatet.Paket.fas(v));
+    if (d.fas === 'frys') DLGSpel.ljud('poang');
+  }
+  else if (typ === 'ratt') tillSpelare(d.b.id, { t: 'e', k: 'ratt', v: Math.round(d.tillvaxt) });
+  else if (typ === 'fel') tillSpelare(d.b.id, { t: 'e', k: 'fel' });
+  else if (typ === 'stold') { tillSpelare(d.offer.id, { t: 'e', k: 'tagen', v: Math.round(d.tagen) }); tillSpelare(d.jag.id, { t: 'e', k: 'tog' }); }
+  else if (typ === 'slut') avslutad();
+}
+
+/* ---------- 20 steg/s, ögonblicksbild 10/s ---------- */
+let senast = performance.now(), ack = 0, snapAck = 0;
+function tick() {
+  const nu = performance.now(), dt = Math.min(0.5, (nu - senast) / 1000); senast = nu;
+  const v = R.varld; if (!v) return;
+  ack += dt;
+  while (ack >= 0.05) { ack -= 0.05; v.steg(0.05); }
+  snapAck += dt;
+  if (snapAck >= 0.1) { snapAck = 0; R.vard.skickaRtc(SLNatet.Paket.snap(v)); }
+  R.vard.skickaReserv(dt, () => SLNatet.Paket.full(v, 'f'));
+  if (++R.tick % 10 === 0 && R.skarm === 'tavla') uppdateraSida();
+}
+
+/* ======================================================================
+   2. Lobby
+   ====================================================================== */
+function adress() {
+  const u = new URL('../', location.href);
+  return (u.host + u.pathname).replace(/\/$/, '');
+}
+function visaLobby() {
+  R.skarm = 'lobby';
+  document.body.className = '';
+  cancelAnimationFrame(R.raf);
+  const direkt = new URL('begreppsslukaren.html?rum=' + R.kod, location.href).href;
+  root.innerHTML = topp(`Rum <b>${R.kod}</b>`) + `<div class="lr-lobby">
+    <div class="lr-kodruta">
+      <div class="k">Gå till</div>
+      <div class="url">${esc(adress())}</div>
+      <div class="k">Välj <b>Begreppsslukaren</b> → <b>Gå med i klassrum</b> och skriv koden:</div>
+      <div class="kod" id="lr-kod">${R.kod}</div>
+      <div class="direkt">Direktlänk: ${esc(direkt)}</div>
+    </div>
+    <div class="lr-lista">
+      <h2>Med i rummet: <span id="lr-antal-med">0</span></h2>
+      <p class="dlg-small" style="color:var(--sky)">Klicka ✕ för att ta bort en spelare, t.ex. vid ett olämpligt alias. Elever kan också gå med när spelet har startat.</p>
+      <div class="lr-chips" id="lr-spelare"></div>
+      <div class="dlg-row" style="margin-top:auto"><button class="dlg-btn" id="lr-start" disabled>Starta spelet ▶</button><button class="dlg-btn ghost small" id="lr-stang">Stäng rummet</button></div>
+      <p class="dlg-small" style="color:var(--sky)">${esc(DLGSpel.banaById(inst.bana).namn)} · ${inst.typ === 'tid' ? inst.min + ' min' : inst.antal + ' frågor'} · ${inst.jakt} s jakt · ${DLGSpel.NIVAER[inst.niva].namn}</p>
+    </div>
+  </div>`;
+  $('#lr-start').onclick = startaSpelet;
+  $('#lr-stang').onclick = stangRum;
+  uppdateraListor();
+}
+
+function chipsHTML() {
+  return [...R.spelare.values()].map(s => `<span class="lr-chip ${uppkopplad(s) ? '' : 'av'}" title="${s.lage === 'reserv' ? 'Reservläge (utan WebRTC)' : uppkopplad(s) ? 'Ansluten' : 'Ansluter / borta'}">
+    <i style="background:${esc(s.farg)}"></i>${esc(s.alias)}${s.lage === 'reserv' ? ' ◌' : ''}<button data-bort="${esc(s.pid)}" aria-label="Ta bort ${esc(s.alias)}">✕</button></span>`).join('');
+}
+function uppdateraListor() {
+  const el = $('#lr-spelare');
+  if (el) {
+    el.innerHTML = chipsHTML() || '<span class="dlg-small" style="color:var(--grey)">Inga spelare än…</span>';
+    $('#lr-antal-med').textContent = R.spelare.size;
+    $('#lr-start').disabled = ![...R.spelare.values()].some(uppkopplad);
+  }
+  const alla = $('#lr-alla');
+  if (alla) { alla.innerHTML = chipsHTML(); $('#lr-alla-n').textContent = R.spelare.size; }
+  root.querySelectorAll('[data-bort]').forEach(b => b.onclick = () => {
+    const s = R.spelare.get(b.dataset.bort);
+    if (s && confirm(`Ta bort ${s.alias} från rummet? Eleven kan inte gå med igen med samma alias.`)) taBort(s.pid);
+  });
+}
+
+function stangRum() {
+  if (!confirm('Stänga rummet? Alla elever kopplas bort.')) return;
+  R.vard.stang(); location.reload();
+}
+
+/* ======================================================================
+   3. Tavlan
+   ====================================================================== */
+function startaSpelet() {
+  const v = R.varld;
+  v.start();
+  R.vard.skickaRtc(SLNatet.Paket.full(v, 'init'));
+  R.vard.skickaRtc(SLNatet.Paket.fas(v));
+  visaTavla();
+}
+
+function visaTavla() {
+  R.skarm = 'tavla';
+  document.body.className = 'tavla';
+  root.innerHTML = `<div class="lr-tavla">${topp(`Rum <b>${R.kod}</b> · ${esc(adress())}`)}
+    <div class="lr-scen" id="lr-scen"><canvas></canvas></div>
+    <aside class="lr-sida">
+      <div class="lr-kort"><h3>Störst</h3><ol id="lr-topp5"></ol></div>
+      <div class="lr-kort"><h3>Flest rätt</h3><ol id="lr-topp3"></ol></div>
+      <div class="dlg-row"><button class="dlg-btn small" id="lr-paus">❚❚ Pausa</button><button class="dlg-btn small ghost" id="lr-avsluta">Avsluta</button></div>
+      <details><summary>Alla spelare (<span id="lr-alla-n">0</span>)</summary><div class="lr-chips" id="lr-alla"></div></details>
+    </aside></div>`;
+  const scen = $('#lr-scen'), cv = scen.querySelector('canvas'), c2 = cv.getContext('2d');
+  const vy = new SL.FragaVy(scen);
+  let W = 0, H = 0;
+  const storlek = () => {
+    const r = scen.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  addEventListener('resize', storlek); storlek();
+  $('#lr-paus').onclick = () => {
+    R.varld.pausad = !R.varld.pausad;
+    $('#lr-paus').textContent = R.varld.pausad ? '▶ Fortsätt' : '❚❚ Pausa';
+    R.vard.skickaRtc(SLNatet.Paket.fas(R.varld));
+  };
+  $('#lr-avsluta').onclick = () => { if (confirm('Avsluta omgången nu och visa resultatet?')) R.varld.avsluta(); };
+  uppdateraSida(); uppdateraListor();
+  const loop = () => {
+    if (R.skarm !== 'tavla') return;
+    const v = R.varld;
+    const z = Math.min(W, H) / v.L * 0.97;
+    SL.rita(c2, W, H, { L: v.L, blobbar: v.blobbar, smulor: v.smulor.values(), bitar: v.bitar.values() },
+      { x: v.L / 2, y: v.L / 2, z }, { bitFont: Math.max(13, Math.min(20, W / 90)), namnMin: Math.max(12, Math.min(18, W / 90)), namnMax: 30 });
+    vy.visa({ fas: v.fas, nr: v.nr, tot: v.antalFragor, text: v.fraga && v.fraga.text, facit: v.forraSvar,
+      fasTid: v.fasTid, jaktTid: v.jaktTid, tidKvar: v.tidKvar, pausad: v.pausad, pausText: 'Pausat' });
+    R.raf = requestAnimationFrame(loop);
+  };
+  R.raf = requestAnimationFrame(loop);
+}
+
+function uppdateraSida() {
+  const v = R.varld, rad = (b, i, varde) => `<li><span>${i + 1}</span><i style="background:${esc(b.farg)}"></i><span class="n">${esc(b.namn)}</span><b>${varde}</b></li>`;
+  const t5 = $('#lr-topp5'), t3 = $('#lr-topp3');
+  if (t5) t5.innerHTML = v.topp(5, 'm').map((b, i) => rad(b, i, fmt(b.m))).join('');
+  if (t3) t3.innerHTML = v.topp(3, 'ratt').filter(b => b.ratt > 0).map((b, i) => rad(b, i, b.ratt + ' rätt')).join('') || '<li><span></span><i style="border:0"></i><span class="n" style="color:var(--grey)">Ingen än</span></li>';
+}
+
+/* ======================================================================
+   4. Slut
+   ====================================================================== */
+function avslutad() {
+  const v = R.varld, n = v.blobbar.length;
+  let fordrojning = 0;
+  R.spelare.forEach(s => {
+    const b = v.blobb(s.id); if (!b) return;
+    const missade = Object.entries(b.missade).sort((x, y) => y[1] - x[1]).map(([i]) => v.bana.begrepp[i]).filter(Boolean).slice(0, 8)
+      .map(x => ({ ord: x.ord, def: x.def }));
+    const msg = { t: 'slut', plats: v.placering(b), n, ratt: b.ratt, fel: b.fel, massa: Math.round(b.m), missade };
+    if (s.lage === 'rtc') R.vard.skicka(s.pid, msg);
+    else if (s.lage === 'reserv') { setTimeout(() => R.vard.tillElev(s.pid, msg), fordrojning); fordrojning += 60; }   // sprid ut, håll budgeten
+  });
+  DLGSpel.ljud('slut');
+  setTimeout(visaSlut, 300);
+}
+
+function visaSlut() {
+  R.skarm = 'slut';
+  cancelAnimationFrame(R.raf);
+  document.body.className = '';
+  const v = R.varld, storst = v.topp(3, 'm'), flestRatt = v.topp(3, 'ratt').filter(b => b.ratt > 0);
+  const missade = R.fragor.statistik().missade.slice(0, 5);
+  const pall = [storst[1], storst[0], storst[2]].map((b, i) => {
+    if (!b) return '<div></div>';
+    const plats = [2, 1, 3][i], d = [130, 170, 110][i];
+    return `<div><div class="blobb" style="width:${d}px;height:${d}px;background:${esc(b.farg)};color:${fargText(b.farg)}">${esc(b.namn)}</div>
+      <div class="massa">${fmt(b.m)} massa · ${b.ratt} rätt</div><div class="steg" style="height:${[90, 130, 64][i]}px">${plats}</div></div>`;
+  }).join('');
+  root.innerHTML = topp(`Rum <b>${R.kod}</b>`) + `<div class="lr-wrap">
+    <h1>Omgången är <span>slut!</span></h1>
+    <div class="lr-pall">${pall}</div>
+    <div class="lr-tva">
+      <div class="dlg-box"><h2>Flest rätt svar</h2><div class="dlg-top">${flestRatt.map((b, i) => `<div class="r"><b>${i + 1}</b><span>${esc(b.namn)}</span><b>${b.ratt}</b></div>`).join('') || '<span class="dlg-small">Ingen svarade rätt.</span>'}</div></div>
+      <div class="dlg-box"><h2>Klassens mest missade begrepp</h2>${missade.length ? `<div class="dlg-miss">${missade.map(b => `<div><b>${esc(b.ord)}</b>${esc(b.def)} <small>(${b.fel} fel)</small></div>`).join('')}</div>` : '<p class="dlg-small">Inga missar alls – snyggt!</p>'}</div>
+    </div>
+    <div class="dlg-row"><button class="dlg-btn" id="lr-igen">Ny omgång med samma klass ▶</button><button class="dlg-btn ghost" id="lr-stang">Stäng rummet</button></div>
+  </div>`;
+  $('#lr-igen').onclick = () => {
+    skapaVarld();
+    R.vard.skickaRtc(SLNatet.Paket.rost(R.varld));
+    R.vard.skickaRtc(SLNatet.Paket.fas(R.varld));
+    R.vard.skickaRtc(SLNatet.Paket.full(R.varld, 'init'));
+    visaLobby();
+  };
+  $('#lr-stang').onclick = stangRum;
+}
+
+visaSkapa();
+</script>
+</body>
+</html>

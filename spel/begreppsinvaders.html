@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Begreppsinvaders – DLG Arcade</title>
+<link rel="icon" href="../assets/img/favicon.svg">
+<style>
+  .def-panel{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:min(760px,calc(100% - 20px));z-index:1;
+    background:#fff;color:#242422;border-left:8px solid #F7D563;padding:10px 14px;box-shadow:0 6px 0 rgba(0,0,0,.18);transition:border-color 150ms}
+  .def-panel .k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#484F59}
+  .def-panel .t{font-family:"Inria Serif",Georgia,serif;font-size:clamp(17px,2.4vw,23px);line-height:1.2}
+  .def-panel.ratt{border-color:#3fa66b}
+  .def-panel.fel{border-color:#A43033}
+</style>
+</head>
+<body>
+<script src="../assets/js/banor.js"></script>
+<script src="../assets/js/dlg-spel.js"></script>
+<script>
+/* Begreppsinvaders – Space Invaders med begrepp.
+   Definitionen står överst. Skjut fienden som bär rätt begrepp innan formationen når dig. */
+
+const NIVA = {
+  // tid = sekunder innan formationen når marken på våg 1 (kortas 4 % per våg, som mest till 45 %)
+  latt:     { alt: 3, tid: 30, fart: 40, fartOka: 3,  skott: 0,   skottFart: 0,   cooldown: 0.22, poang: 1 },
+  normal:   { alt: 4, tid: 22, fart: 60, fartOka: 5,  skott: 2.2, skottFart: 200, cooldown: 0.28, poang: 1.5 },
+  hardcore: { alt: 4, tid: 15, fart: 85, fartOka: 7,  skott: 1.1, skottFart: 280, cooldown: 0.30, poang: 2.2 }
+};
+const FARGER = ['#F7D563', '#C9E0EE', '#F1D9EA', '#E1EFE3', '#848AC4'];
+// 11×8 pixelgubbar, två animationsrutor var
+const SPRITES = [
+  ['00100000100','00010001000','00111111100','01101110110','11111111111','10111111101','10100000101','00011011000'],
+  ['00100000100','10010001001','10111111101','11101110111','11111111111','01111111110','00100000100','01000000010'],
+  ['00001110000','00111111100','01111111110','11100100111','11111111111','00110001100','01101110110','11000000011'],
+  ['00001110000','00111111100','01111111110','11100100111','11111111111','00011011000','00110001100','00011011000']
+];
+
+let G = null; // spelets tillstånd
+
+DLGSpel.start({
+  id: 'invaders',
+  titel: 'Begreppsinvaders',
+  ingress: 'Begreppen invaderar. Läs definitionen och skjut rätt begrepp innan de når marken.',
+  instruktion: [
+    'Definitionen står överst. Fienderna bär varsitt begrepp.',
+    'Skjut fienden med rätt begrepp. Fel träff gör att resten rusar fram snabbare.',
+    'Rätt svar i rad ger multiplikator. Fem i rad ger dubbelskott!',
+    'Når formationen marken eller du blir träffad förlorar du ett liv. Tre liv.'
+  ],
+  nivaText: { latt: '3 alternativ, ingen beskjutning', normal: '4 alternativ, fienden skjuter', hardcore: 'Snabbt och mycket eld' },
+  maxPoang: 250000,
+  knappar: ['vanster', 'hoger', 'skjut'],
+  starta: startaSpel,
+  onSlut() { if (G) { G.slut = true; G.panel.remove(); } }
+});
+
+function startaSpel(ctx) {
+  const stage = ctx.stage;
+  stage.innerHTML = '<canvas></canvas><div class="def-panel"><div class="k">Vilket begrepp betyder…</div><div class="t"></div></div>';
+  const cv = stage.querySelector('canvas'), c2 = cv.getContext('2d');
+  const panel = stage.querySelector('.def-panel');
+  const N = NIVA[ctx.niva];
+
+  G = {
+    ctx, cv, c2, panel, N, slut: false,
+    W: 0, H: 0, dpr: 1,
+    poang: 0, liv: 3, vag: 0, svit: 0, basta: 0,
+    spelare: { x: 0, w: 44, h: 22, cool: 0, osarbar: 0 },
+    skott: [], fiendeSkott: [], partiklar: [], texter: [], stjarnor: [],
+    form: null, dubbel: 0, skak: 0, pek: null, t: 0
+  };
+
+  function storlek() {
+    const r = stage.getBoundingClientRect();
+    G.dpr = Math.min(2, window.devicePixelRatio || 1);
+    G.W = r.width; G.H = r.height;
+    cv.width = G.W * G.dpr; cv.height = G.H * G.dpr;
+    c2.setTransform(G.dpr, 0, 0, G.dpr, 0, 0);
+    G.markY = G.H - 46;
+    if (!G.spelare.x) G.spelare.x = G.W / 2;
+    G.spelare.x = Math.max(30, Math.min(G.W - 30, G.spelare.x));
+    if (G.form) layout(G.form, true);
+  }
+  G.storlek = storlek;
+  addEventListener('resize', storlek);
+  storlek();
+  for (let i = 0; i < 70; i++) G.stjarnor.push({ x: Math.random(), y: Math.random(), z: Math.random() * 0.8 + 0.2 });
+
+  // dra med fingret på spelplanen = styr, håll nere = skjut
+  cv.addEventListener('pointerdown', e => { G.pek = e.clientX - cv.getBoundingClientRect().left; });
+  cv.addEventListener('pointermove', e => { if (G.pek !== null) G.pek = e.clientX - cv.getBoundingClientRect().left; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => cv.addEventListener(t, () => { G.pek = null; }));
+
+  uppdateraHud();
+  nyVag();
+  let last = performance.now();
+  function loop(now) {
+    if (G.slut) return;
+    const dt = Math.max(0, Math.min(0.033, (now - last) / 1000)); last = now;
+    if (!DLGSpel.pausad) uppdatera(dt);
+    rita();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- vågor ---------- */
+function nyVag() {
+  G.vag++;
+  const q = G.ctx.fragor.nasta(G.N.alt, 'def');
+  G.fraga = q; G.besvarad = false; G.klar = false;
+  G.panel.className = 'def-panel';
+  G.panel.querySelector('.k').textContent = `Våg ${G.vag} · Vilket begrepp betyder…`;
+  G.panel.querySelector('.t').textContent = q.fraga;
+  const fiender = q.alternativ.map((a, i) => ({ text: a.text, ratt: a.ratt, alive: true, sprite: i % 4, farg: FARGER[i % FARGER.length], blink: 0, lyser: false }));
+  G.form = { fiender, dir: Math.random() < .5 ? 1 : -1, fart: G.N.fart + G.N.fartOka * (G.vag - 1), ox: 0, oy: 0, steg: 0, anim: 0, skottTid: G.N.skott ? G.N.skott + 1 : 0 };
+  G.form.fart = Math.min(G.form.fart, G.N.fart * 4);
+  layout(G.form);
+  const tid = G.N.tid * Math.max(0.45, 1 - 0.04 * (G.vag - 1));
+  G.form.fall = Math.max(8, (G.markY - 10 - G.form.y - G.form.hojd)) / tid;
+  uppdateraHud();
+}
+
+function layout(f, behall) {
+  const n = f.fiender.length;
+  const cols = G.W < 560 ? Math.min(2, n) : n;
+  const rows = Math.ceil(n / cols);
+  const cellW = Math.min(180, (G.W * 0.9) / cols);
+  const cellH = 92;
+  f.cols = cols; f.cellW = cellW; f.cellH = cellH;
+  f.bredd = cols * cellW; f.hojd = rows * cellH;
+  const panelH = G.panel.getBoundingClientRect().height + 22;
+  if (!behall) { f.x = (G.W - f.bredd) / 2; f.y = panelH; }
+  f.x = Math.max(4, Math.min(G.W - f.bredd - 4, f.x));
+  f.y = Math.max(f.y, panelH);
+  f.fiender.forEach((e, i) => { e.cx = (i % cols) * cellW + cellW / 2; e.cy = Math.floor(i / cols) * cellH + 22; });
+}
+
+/* ---------- uppdatering ---------- */
+function uppdatera(dt) {
+  G.t += dt;
+  const s = G.spelare, f = G.form;
+  // styrning
+  const fart = 380;
+  if (DLGSpel.ned('vanster')) s.x -= fart * dt;
+  if (DLGSpel.ned('hoger')) s.x += fart * dt;
+  if (G.pek !== null) s.x += Math.max(-fart * 1.6 * dt, Math.min(fart * 1.6 * dt, G.pek - s.x));
+  s.x = Math.max(26, Math.min(G.W - 26, s.x));
+  s.cool -= dt; s.osarbar -= dt; G.dubbel -= dt; G.skak = Math.max(0, G.skak - dt * 20);
+  const skjuter = DLGSpel.tryckt('skjut') || DLGSpel.ned('skjut') || G.pek !== null;
+  if (skjuter && s.cool <= 0 && G.skott.length < 6) {
+    s.cool = G.N.cooldown;
+    if (G.dubbel > 0) { G.skott.push({ x: s.x - 12, y: G.markY - 14 }, { x: s.x + 12, y: G.markY - 14 }); }
+    else G.skott.push({ x: s.x, y: G.markY - 14 });
+    DLGSpel.ljud('skott');
+  }
+
+  // skott
+  G.skott.forEach(b => b.y -= 640 * dt);
+  G.skott = G.skott.filter(b => b.y > -20 && !b.dod);
+  G.fiendeSkott.forEach(b => b.y += b.v * dt);
+  G.fiendeSkott = G.fiendeSkott.filter(b => b.y < G.H + 20 && !b.dod);
+
+  // formation
+  if (f && !G.klar) {
+    f.anim += dt;
+    f.x += f.dir * f.fart * dt;
+    f.y += f.fall * dt;
+    if (f.x < 4 || f.x + f.bredd > G.W - 4) {
+      f.x = Math.max(4, Math.min(G.W - f.bredd - 4, f.x));
+      f.dir *= -1; f.y += 6;
+    }
+    f.fiender.forEach(e => e.blink = Math.max(0, e.blink - dt));
+    // fienden skjuter
+    if (G.N.skott) {
+      f.skottTid -= dt;
+      if (f.skottTid <= 0) {
+        const levande = f.fiender.filter(e => e.alive);
+        const e = levande[Math.floor(Math.random() * levande.length)];
+        if (e) G.fiendeSkott.push({ x: f.x + e.cx, y: f.y + e.cy + 20, v: G.N.skottFart + G.vag * 6 });
+        f.skottTid = Math.max(0.45, G.N.skott - G.vag * 0.05) * (0.6 + Math.random() * 0.8);
+      }
+    }
+    // träffar
+    for (const b of G.skott) {
+      for (const e of f.fiender) {
+        if (!e.alive) continue;
+        const r = traffRuta(e);
+        if (b.x > r.x && b.x < r.x + r.w && b.y > r.y && b.y < r.y + r.h) { b.dod = true; traff(e); break; }
+      }
+    }
+    // formationen når marken
+    const nedersta = Math.max(...f.fiender.filter(e => e.alive).map(e => f.y + e.cy + 56));
+    if (nedersta >= G.markY - 10) {
+      if (!G.besvarad) G.ctx.fragor.svara(G.fraga.begrepp, false);
+      G.svit = 0;
+      visaRattSvar('Rätt svar: ' + G.fraga.svar);
+      forloraLiv();
+      if (G.liv > 0) nastaVag(1.6);
+    }
+  }
+  // spelaren träffas
+  for (const b of G.fiendeSkott) {
+    if (s.osarbar <= 0 && Math.abs(b.x - s.x) < s.w / 2 && b.y > G.markY - 14 && b.y < G.markY + 10) {
+      b.dod = true; forloraLiv();
+    }
+  }
+  // partiklar och texter
+  G.partiklar.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.liv -= dt; });
+  G.partiklar = G.partiklar.filter(p => p.liv > 0);
+  G.texter.forEach(t => { t.y -= 40 * dt; t.liv -= dt; });
+  G.texter = G.texter.filter(t => t.liv > 0);
+}
+
+function traffRuta(e) {
+  const f = G.form;
+  return { x: f.x + e.cx - f.cellW / 2 + 6, y: f.y + e.cy - 18, w: f.cellW - 12, h: 76 };
+}
+
+function traff(e) {
+  const f = G.form;
+  const px = f.x + e.cx, py = f.y + e.cy;
+  e.alive = false;
+  explosion(px, py, e.ratt ? '#F7D563' : '#A43033', 26);
+  if (e.ratt) {
+    const hojdBonus = Math.round(100 * Math.max(0, 1 - (f.y - 60) / (G.markY - 160)));
+    const mult = 1 + Math.min(G.svit, 10) * 0.2;
+    let p = Math.round(((100 + G.vag * 10) * mult + hojdBonus) * G.N.poang);
+    if (G.besvarad) p = Math.round(p * 0.25); // rätt efter ett fel ger mindre
+    else { G.ctx.fragor.svara(G.fraga.begrepp, true); G.svit++; G.basta = Math.max(G.basta, G.svit); }
+    G.poang += p; G.ctx.setPoang(G.poang);
+    G.texter.push({ x: px, y: py, text: '+' + p, farg: '#F7D563', liv: 1 });
+    DLGSpel.ljud('ratt');
+    G.panel.className = 'def-panel ratt';
+    G.panel.querySelector('.k').textContent = `Rätt! ${G.fraga.svar}`;
+    if (G.svit > 0 && G.svit % 5 === 0 && !G.besvarad) { G.dubbel = 8; G.ctx.toast('Dubbelskott! ×' + (1 + Math.min(G.svit, 10) * 0.2).toFixed(1)); DLGSpel.ljud('niva'); }
+    else if (G.svit >= 3 && !G.besvarad) G.ctx.toast(G.svit + ' i rad!');
+    f.fiender.forEach(o => { if (o.alive) { o.alive = false; explosion(f.x + o.cx, f.y + o.cy, '#C9E0EE', 10); } });
+    nastaVag(0.9);
+  } else {
+    if (!G.besvarad) { G.ctx.fragor.svara(G.fraga.begrepp, false); G.besvarad = true; }
+    G.svit = 0;
+    G.texter.push({ x: px, y: py, text: 'Fel!', farg: '#ff6b6b', liv: 1 });
+    DLGSpel.ljud('fel');
+    G.skak = 6;
+    f.fart *= 1.3; f.fall *= 1.35; f.y += 16;
+    G.panel.className = 'def-panel fel';
+    G.panel.querySelector('.k').textContent = `Nej, ${e.text} betyder något annat. Skjut rätt begrepp!`;
+  }
+  uppdateraHud();
+}
+
+function visaRattSvar(text) {
+  G.panel.className = 'def-panel fel';
+  G.panel.querySelector('.k').textContent = text;
+  G.form.fiender.forEach(e => { if (e.ratt) e.lyser = true; });
+}
+
+function nastaVag(sek) {
+  G.klar = true;
+  setTimeout(() => { if (!G.slut) nyVag(); }, sek * 1000);
+}
+
+function forloraLiv() {
+  if (G.liv <= 0) return;
+  G.liv--; G.skak = 10; G.spelare.osarbar = 1.6;
+  explosion(G.spelare.x, G.markY, '#ff6b6b', 30);
+  DLGSpel.ljud('traff');
+  G.fiendeSkott = [];
+  uppdateraHud();
+  if (G.liv <= 0) { G.klar = true; setTimeout(() => G.ctx.slut(G.poang), 900); }
+}
+
+function explosion(x, y, farg, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 220;
+    G.partiklar.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, liv: 0.5 + Math.random() * 0.5, farg, s: 2 + Math.random() * 3 });
+  }
+  DLGSpel.ljud('small');
+}
+
+function uppdateraHud() {
+  G.ctx.hud('liv', 'Liv', '♥'.repeat(Math.max(0, G.liv)) || '–');
+  G.ctx.hud('vag', 'Våg', G.vag);
+  G.ctx.hud('svit', 'Svit', G.svit ? '×' + (1 + Math.min(G.svit, 10) * 0.2).toFixed(1) : '–');
+}
+
+/* ---------- ritning ---------- */
+function rita() {
+  const c = G.c2, W = G.W, H = G.H;
+  c.save();
+  c.clearRect(0, 0, W, H);
+  if (G.skak) c.translate((Math.random() - .5) * G.skak, (Math.random() - .5) * G.skak);
+  // stjärnor
+  G.stjarnor.forEach(s => {
+    const y = (s.y * H + G.t * 25 * s.z) % H;
+    c.fillStyle = `rgba(255,255,255,${0.25 + s.z * 0.5})`;
+    c.fillRect(s.x * W, y, s.z * 2.2, s.z * 2.2);
+  });
+  // mark
+  c.fillStyle = 'rgba(247,213,99,.35)';
+  c.fillRect(0, G.markY + 16, W, 3);
+
+  // fiender
+  const f = G.form;
+  if (f) f.fiender.forEach(e => {
+    if (!e.alive) return;
+    const x = f.x + e.cx, y = f.y + e.cy;
+    const ruta = Math.floor(f.anim * 2) % 2;
+    ritaSprite(c, SPRITES[(e.sprite % 2) * 2 + ruta], x, y, G.W < 560 ? 3.4 : 4.4, e.lyser && Math.floor(G.t * 6) % 2 ? '#3fa66b' : e.farg);
+    // etikett
+    const bw = f.cellW - 14;
+    c.font = `700 ${G.W < 420 ? 13 : 15}px Inter, Arial, sans-serif`;
+    const rader = radbryt(c, e.text, bw - 12).slice(0, 3);
+    const bh = rader.length * 17 + 10;
+    const bx = x - bw / 2, by = y + 20;
+    c.fillStyle = e.lyser ? '#3fa66b' : '#fff';
+    c.fillRect(bx, by, bw, bh);
+    c.fillStyle = e.lyser ? '#fff' : '#242422';
+    c.textAlign = 'center'; c.textBaseline = 'top';
+    rader.forEach((r, i) => c.fillText(r, x, by + 6 + i * 17));
+  });
+
+  // spelaren
+  const s = G.spelare;
+  if (G.liv > 0 && (s.osarbar <= 0 || Math.floor(G.t * 12) % 2)) {
+    c.fillStyle = G.dubbel > 0 ? '#F8EAA4' : '#F7D563';
+    const x = s.x, y = G.markY;
+    c.fillRect(x - 22, y, 44, 12);
+    c.fillRect(x - 15, y - 6, 30, 6);
+    c.fillRect(x - 4, y - 16, 8, 10);
+    if (G.dubbel > 0) { c.fillRect(x - 18, y - 12, 5, 8); c.fillRect(x + 13, y - 12, 5, 8); }
+  }
+  // skott
+  c.fillStyle = '#F8EAA4';
+  G.skott.forEach(b => c.fillRect(b.x - 2, b.y - 10, 4, 14));
+  c.fillStyle = '#ff6b6b';
+  G.fiendeSkott.forEach(b => { c.fillRect(b.x - 2, b.y, 4, 10); c.fillRect(b.x - 4, b.y + 4, 8, 3); });
+  // partiklar
+  G.partiklar.forEach(p => { c.globalAlpha = Math.max(0, p.liv); c.fillStyle = p.farg; c.fillRect(p.x, p.y, p.s, p.s); });
+  c.globalAlpha = 1;
+  // flytande texter
+  c.font = '900 22px Inter, Arial, sans-serif'; c.textAlign = 'center';
+  G.texter.forEach(t => { c.globalAlpha = Math.min(1, t.liv * 2); c.fillStyle = t.farg; c.fillText(t.text, t.x, t.y); });
+  c.globalAlpha = 1;
+  c.restore();
+}
+
+function ritaSprite(c, rader, cx, cy, px, farg) {
+  c.fillStyle = farg;
+  const w = rader[0].length * px, h = rader.length * px;
+  rader.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] === '1') c.fillRect(Math.round(cx - w / 2 + i * px), Math.round(cy - h / 2 + j * px), Math.ceil(px), Math.ceil(px)); });
+}
+
+function radbryt(c, text, max) {
+  const ord = String(text).split(/\s+/), rader = [];
+  let rad = '';
+  for (const o of ord) {
+    const test = rad ? rad + ' ' + o : o;
+    if (c.measureText(test).width <= max || !rad) rad = test; else { rader.push(rad); rad = o; }
+  }
+  if (rad) rader.push(rad);
+  // för långa enskilda ord: dela vid snedstreck eller kapa
+  return rader.flatMap(r => c.measureText(r).width <= max ? [r] : r.split('/').map((d, i, a) => d + (i < a.length - 1 ? '/' : '')));
+}
+</script>
+</body>
+</html>

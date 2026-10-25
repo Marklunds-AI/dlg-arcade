@@ -1,5 +1,6 @@
 /* DLG Arcade – gemensam logik för alla sidor.
-   Nytt spel? Lägg till en rad i TOOLS och en fil i /spel. Klart. */
+   Nytt spel? Bygg det på assets/js/dlg-spel.js, lägg filen i /spel och en rad i TOOLS
+   med table: 'ArcadeScore' och game: '<spelets id>'. Ingen ny tabell behövs. */
 
 const SUPABASE_URL = 'https://yafkxfuveudkccjkkcto.supabase.co';
 // Publik "anon"-nyckel – den får synas i webbläsaren. Skyddet ligger i tabellernas RLS-regler.
@@ -20,7 +21,17 @@ const TOOLS = [
     href: 'spel/begrepps-snake.html', table: 'SnakeHighscore', unit: '',
     bg: 'var(--lk-forest)', soft: 'var(--lk-mint)', time: '1–10 min',
     courses: ['Hälsopedagogik', 'Fritidskunskap', 'Pedagogik'],
-    desc: 'Styr ormen till rätt svar och väx för varje begrepp du kan.' }
+    desc: 'Styr ormen till rätt svar och väx för varje begrepp du kan.' },
+  { id: 'invaders', title: 'Begreppsinvaders', short: 'Begreppsinvaders', type: 'Spel', program: 'Alla program', isNew: true,
+    href: 'spel/begreppsinvaders.html', table: 'ArcadeScore', game: 'invaders', unit: '',
+    bg: 'var(--lk-slate)', soft: 'var(--lk-cream)', time: '2–10 min',
+    courses: ['Hälsopedagogik', 'Fritidskunskap', 'AI-kunskap'],
+    desc: 'Begreppen invaderar! Läs definitionen och skjut rätt begrepp innan formationen når marken.' },
+  { id: 'slukaren', title: 'Begreppsslukaren', short: 'Begreppsslukaren', type: 'Spel', program: 'Alla program', isNew: true,
+    href: 'spel/begreppsslukaren.html', table: 'ArcadeScore', game: 'slukaren', unit: '',
+    bg: 'var(--lk-lavender)', soft: 'var(--lk-sky)', time: '5–10 min',
+    courses: ['Hälsopedagogik', 'Fritidskunskap', 'Pedagogik', 'AI-kunskap'],
+    desc: 'Ät rätt begrepp och väx! Spela mot bottar eller med hela klassen – läraren skapar ett rum och eleverna går med på mobilen.' }
 ];
 const FEATURED_ID = 'nastaord';
 const COURSES = ['AI-kunskap', 'Hälsopedagogik', 'Fritidskunskap', 'Pedagogik'];
@@ -28,7 +39,7 @@ const COURSES = ['AI-kunskap', 'Hälsopedagogik', 'Fritidskunskap', 'Pedagogik']
 /* ---------- små hjälpare ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 const toolById = id => TOOLS.find(t => t.id === id);
 
 const ICONS = {
@@ -106,7 +117,9 @@ function cardHTML(t, variant = 'start') {
 
 /* ---------- topplistor (Supabase REST) ---------- */
 async function fetchTop(tool, limit = 5) {
-  const url = `${SUPABASE_URL}/rest/v1/${tool.table}?select=name,score&order=score.desc&limit=${limit}`;
+  // Spel i den gemensamma tabellen ArcadeScore filtreras på kolumnen game.
+  const filter = tool.game ? `&game=eq.${encodeURIComponent(tool.game)}` : '';
+  const url = `${SUPABASE_URL}/rest/v1/${tool.table}?select=name,score${filter}&order=score.desc&limit=${limit}`;
   const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   return (await res.json()).map(r => ({ name: r.name, score: Number(r.score) || 0, tool }));
