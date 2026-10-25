@@ -39,7 +39,7 @@ const COURSES = ['AI-kunskap', 'Hälsopedagogik', 'Fritidskunskap', 'Pedagogik']
 /* ---------- små hjälpare ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 const toolById = id => TOOLS.find(t => t.id === id);
 
 const ICONS = {
