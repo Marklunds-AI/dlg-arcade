@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f1222">
+<title>BF-Rush – DLG Arcade</title>
+<link rel="icon" href="img/bf-logo.png">
+<style>
+  @font-face{font-family:"Nunito";font-style:normal;font-weight:200 1000;font-display:block;src:url("fonts/Nunito-200-1000-normal.woff2") format("woff2");}
+  @font-face{font-family:"Inter";font-style:normal;font-weight:300 900;font-display:swap;src:url("fonts/Inter-300-900-normal.woff2") format("woff2");}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0f1222;color:#fff;font-family:"Inter",Arial,sans-serif;
+    touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+  .vrid{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom));text-align:center;font:800 16px/1.3 "Nunito",sans-serif;color:#c9cbe0;pointer-events:none;display:none;padding:0 16px}
+  @media (orientation:portrait) and (max-width:700px){.vrid{display:block}}
+</style>
+</head>
+<body>
+<canvas id="bf-canvas" tabindex="0" aria-label="BF-Rush. Mellanslag eller pil upp hoppar, pil ner glider, P pausar, M stänger av ljudet."></canvas>
+<div class="vrid">Vrid mobilen till liggande läge för större spel</div>
+<!-- Texterna ligger i bf-rush-innehall.js – ändra där. -->
+<script src="bf-rush-innehall.js"></script>
+<script src="js/grafik.js"></script>
+<script src="js/miljoer.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/topplista.js"></script>
+<script src="js/personal.js"></script>
+<script src="js/spel.js"></script>
+</body>
+</html>

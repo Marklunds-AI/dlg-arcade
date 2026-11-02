@@ -26,11 +26,14 @@ create policy "Alla kan spara resultat" on public."ArcadeScore"
 -- Extra spärr utöver RLS: webbens roller får inte ändra, radera eller tömma tabellen.
 revoke update, delete, truncate on public."ArcadeScore" from anon, authenticated;
 
--- Poängtak per spel (spelen kapar också själva i webbläsaren):
+-- Poängtak per spel (spelen kapar också själva i webbläsaren).
+-- Nytt spel med tak? Kör de två raderna nedan igen med en ny rad i listan.
+alter table public."ArcadeScore" drop constraint if exists arcadescore_tak;
 alter table public."ArcadeScore" add constraint arcadescore_tak check (
   case game
     when 'invaders' then score <= 250000
     when 'slukaren' then score <= 100000
+    when 'bfrush'   then score <= 999999
     else true
   end
 );
