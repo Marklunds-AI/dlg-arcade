@@ -79,6 +79,71 @@ WebRTC använder Googles publika STUN-server för att hitta vägen mellan enhete
 - **Bots** "läser" i 2,5–6 s innan de väljer en bit och kör med 70–92 % fart. Annars åt de upp alla rätta svar innan en människa hann reagera.
 - **Antal felaktiga bitar per rätt:** Lätt 2, Normal 3, Hardcore 4.
 
+## BF-Rush – monterspelet för Barn- och fritidsprogrammet
+
+En endless runner där man springer igenom en vecka på BF: uppvärmning, måndag–fredag (svenska, planera, APL, matte och NK, idrott och hälsa, engelska, friluftsliv, genomföra, utvärdera) och sedan HELG!. Därefter börjar vecka 2 i högre fart. Spelet är byggt för montern och fungerar helt utan nät.
+
+Allt som hör till spelet ligger i en egen mapp, så att hela mappen kan kopieras till en annan dator:
+
+| Fil | Vad |
+|---|---|
+| `spel/bf-rush/index.html` | Spelet |
+| `spel/bf-rush/bf-rush-innehall.js` | **Alla texter**: schemat, frågor, situationer, skyltar, titlar, fula ord |
+| `spel/bf-rush/js/spel.js` | Spelet. **`CONFIG` överst** har alla siffror (fart, hopp, poäng, läspauser, PIN, QR-adress) |
+| `spel/bf-rush/js/grafik.js`, `miljoer.js` | Figurer, föremål och de åtta miljöerna (allt ritas med kod) |
+| `spel/bf-rush/js/topplista.js` | Lokal topplista och kön till Supabase |
+| `spel/bf-rush/js/personal.js` | Personalmenyn |
+| `spel/bf-rush/js/qr.js` | QR-kod utan externa bibliotek |
+| `spel/bf-rush/img/`, `fonts/` | BF-loggan och typsnitten (Nunito och Inter) |
+
+### Starta monterläget
+
+1. Öppna `spel/bf-rush/index.html?monter=1`, antingen från sajten (`https://<sajten>/spel/bf-rush/index.html?monter=1`) eller lokalt genom att dubbelklicka på `spel/bf-rush/index.html` och lägga till `?monter=1` sist i adressen.
+2. Tryck **F** (eller helskärmsknappen uppe till höger) för helskärm.
+3. Tryck en gång på tangentbordet eller skärmen innan besökarna börjar, så att ljudet startar. Chrome tillåter inte ljud förrän någon har tryckt. Med handkontroll räcker det inte, så starta hellre Chrome med `--autoplay-policy=no-user-gesture-required` (och gärna `--kiosk`).
+
+I monterläget visas dagens topp 10 på startskärmen. Efter 25 s utan aktivitet rullar attract mode (topplistan → en demo där figuren spelar själv → "Vad är BF?"). Valfri knapp startar ett nytt spel.
+
+Styrning: hoppa = mellanslag/↑/W, övre halvan av skärmen eller A på handkontrollen (håll inne = högre, tryck igen = dubbelhopp). Glida = ↓/S, nedre halvan eller B. Paus = P/Esc, pausknappen eller Start. I pausmenyn finns **Till start**. M = ljud av/på.
+
+### Personalmenyn
+
+Håll nere **övre vänstra hörnet i 3 sekunder** eller tryck **Ctrl+Shift+B**. PIN-koden är **2468** (ändras i `CONFIG.personalPin`). I menyn kan du:
+
+- **ta bort ett enskilt resultat** (t.ex. ett olämpligt namn) från dagens lista eller Bästa någonsin
+- **exportera listan som CSV**. Den öppnas rätt i Excel och har med namn, skola, poäng, inriktning och tid, så att ni hittar vinnaren. Välj datum i listan för att exportera en tidigare dag.
+- **nollställa dagens lista**
+- slå av och på ljud och musik, ändra svårighetsgraden (0,8–1,2) och visa FPS
+- se hur många resultat som väntar på att skickas till Supabase, och skicka dem direkt
+
+Borttagna resultat försvinner bara i montern. I Supabase tar du bort dem i Table Editor (tabellen `ArcadeScore`, `game = 'bfrush'`).
+
+### Topplistan
+
+Resultaten sparas i webbläsaren (localStorage), en lista per datum, så dagens lista byts automatiskt vid midnatt och historiken finns kvar. Finns nätet skickas namnet och poängen också till `ArcadeScore` (`game: 'bfrush'`, `list: 'monter'` eller `'webb'`). Skolan skickas inte, den stannar i montern. Saknas nätet ligger resultatet i en kö och skickas när nätet kommer tillbaka.
+
+Topplistan finns i den webbläsare där spelet körs. Använd därför samma dator och webbläsare under hela dagen, och samma adress (filen eller sajten), eftersom de räknas som olika ställen.
+
+### Ändra texterna
+
+Alla texter ligger i `spel/bf-rush/bf-rush-innehall.js`. Läs instruktionen överst i filen. Spara och ladda om spelet (F5).
+
+- **Situationer** (`situationer`): `text`, `ratt`, `fel`, `forklaring` (visas om man väljer fel) och `miljoer` (var situationen kan dyka upp: `forskola`, `fritidsgard`, `idrott`, `skog`, `evenemang`, `planering` eller `apl` för båda APL-miljöerna).
+- **Snabbfrågor** (`fragor`): `amne` (Svenska, Matte, Naturkunskap eller Engelska), `fraga`, `ratt`, `fel`, `forklaring`.
+- **Utvärdering** (`utvardering`): som situationerna, utan miljöer.
+- **Schemat** (`schema`): passens titlar, temat som visas i läspausen (`skylt`) och texten på tavlan.
+- **Fula ord** (`fulaOrd`, `fulaOrdHela`): ord som stoppas i namnen.
+
+Spelet väljer alltid den fråga som visades för längst sedan, så ju fler frågor, desto mer variation.
+
+### QR-koden
+
+Skriv adressen till programsidan i `CONFIG.qrAdress` i `spel/bf-rush/js/spel.js`. Koden ritas av spelet självt och syns på slutskärmen och på "Vad är BF?". Lämnas adressen tom visas ingen QR-kod.
+
+### Justera svårighetsgraden
+
+De viktigaste siffrorna i `CONFIG`: `fart.vecka1` (farten måndag–fredag), `fart.veckaStart` (vecka 2 och 3), `bana.luckaPerDag` och `bana.luckaMinst` (hur tätt hindren kommer), `uppvarmning` (lugn start), `vagval.lasTid` (läspausen), `hopp` (hopphöjd) och `titelGranser` (titlarna på slutskärmen).
+
 ## Lägga till ett spel
 
 1. Kopiera `spel/begreppsinvaders.html`, byt `id` och skriv din spelmekanik i `starta(ctx)`.
@@ -96,7 +161,7 @@ Topplistorna ligger i Supabase och hämtas via REST med den publika anon-nyckeln
 | Nästa ord | `NastaOrdHighscore` |
 | Begreppsracet | `Highscore` |
 | Begrepps-Snake Deluxe | `SnakeHighscore` |
-| Begreppsinvaders, Begreppsslukaren och alla nya motorspel | `ArcadeScore` (kolumnen `game`) |
+| Begreppsinvaders, Begreppsslukaren, BF-Rush och alla nya motorspel | `ArcadeScore` (kolumnen `game`) |
 
 ## Publicering
 

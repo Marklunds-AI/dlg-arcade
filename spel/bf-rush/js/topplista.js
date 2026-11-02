@@ -49,6 +49,7 @@
     store.set('bfrush_basta', sortera(basta().concat(post)).slice(0, VISA));
     // Till Supabase skickas bara smeknamn och poäng – skolan stannar i montern.
     koa({ game: SPEL, name: namn, score: post.poang, list: monter ? 'monter' : 'webb' });
+    setTimeout(() => { try { parent !== window && parent.postMessage({ type: 'dlg-score-saved', game: SPEL }, '*'); } catch (e) {} }, 2500);   // spelsidan uppdaterar sin topplista
     return { post, plats: dagens(d).findIndex(r => r.id === post.id) + 1 };
   }
 

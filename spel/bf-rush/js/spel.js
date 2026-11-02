@@ -21,7 +21,7 @@
 
     // Fart = bas × faktor. Vecka 1 har en faktor per dag (mån–fre). Vecka 2+ startar på veckaStart
     // och ökar med perDagSen per dag, upp till max. Farten glider mot målet med "acceleration" per sekund.
-    fart: { bas: 760, vecka1: [1.0, 1.075, 1.15, 1.225, 1.3], veckaStart: { 2: 1.4, 3: 1.6 }, perVeckaSen: 0.1, perDagSen: 0.04, max: 2.0, acceleration: 0.2 },
+    fart: { bas: 760, vecka1: [1.0, 1.12, 1.24, 1.36, 1.48], veckaStart: { 2: 1.6, 3: 1.8 }, perVeckaSen: 0.1, perDagSen: 0.04, max: 2.0, acceleration: 0.2 },
     svarighet: 1.0,            // personalmenyn kan ändra 0,8–1,2 (påverkar farten)
     passTid: 12,               // sekunder per pass, två pass per dag
     utvarderaTid: 12,          // fredag eftermiddag – två utvärderingsval tätt efter varandra
@@ -39,23 +39,24 @@
 
     // Banan byggs av handgjorda segment. Avstånden anges i sekunder, så de går att klara i alla farter.
     // passKant/passStart = sekunder utan hinder före och efter "dörren" mellan två pass (hämta andan)
-    bana: { startLucka: 1.4, luckaMin: 0.5, luckaMax: 0.95, nivaTid: [0, 8, 30], tipsAntal: 2, passKant: 1.0, passStart: 1.0 },
+    bana: { startLucka: 1.4, luckaMin: 0.5, luckaMax: 0.95, nivaTid: [0, 8, 30], tipsAntal: 2, passKant: 1.0, passStart: 1.0,
+      luckaPerDag: 0.075, luckaMinst: 0.7 },   // luckorna mellan hindren krymper 7,5 % per dag (fredag ≈ 70 %), som minst 70 %
     uppvarmning: { tid: 7, fart: 0.8, forstaHinder: 4.5 },   // uppvärmning i lägre fart innan måndagen (bara vecka 1). forstaHinder = sekunder innan första hindret
 
     // Vägval: banan delar sig i en övre (plattform) och en nedre väg.
     vagval: {
       placering: 0.42,                    // var i passet vägvalet börjar (0–1)
       utvPlacering: [0.05, 0.5],          // två vägval i utvärderingspasset
-      // sekunder: tom sträcka före plattformen, plattformens längd, tomt efter.
-      // inled + beslut − visaFore ≥ 0,9 s gör att frågan alltid dyker upp på den tomma sträckan.
-      inled: 3.0, plattform: 1.7, efter: 0.5,
+      // sekunder: tom sträcka före plattformen, plattformens längd, tomt efter
+      inled: 1.5, plattform: 1.7, efter: 0.5,
+      pausVid: 0.25,                      // läspausen börjar så här långt in på den tomma sträckan (s), när figuren står på marken
+      fritt: 0.5,                         // minst så här lång lucka mellan sista hindret och den tomma sträckan (s)
       hojd: 196, tjock: 30,               // plattformens höjd över marken och tjocklek
       beslut: 0.4,                        // hur långt in på plattformen (s) valet avgörs
-      visaFore: 2.5,                      // sekunder innan beslutet som frågan dyker upp
       lasTid: 4.5,                        // spelet står still så här länge medan man läser frågan
       lasMin: 1.5,                        // efter så här lång tid kan man trycka för att köra direkt
       utvLasTid: 2.5, utvLasMin: 0.8,     // kortare läspaus i utvärderingspasset, där tre frågor kommer tätt
-      broms: 0.9,                         // farten fram till vägvalet efter läspausen
+      broms: 1.0,                         // farten fram till vägvalet efter läspausen (1 = ingen inbromsning)
       slowmo: 0.3, slowSkala: 0.3,        // kort slow-motion vid rätt val
       resultatTid: 3.2,
       temaTid: 1.5                        // extra lästid för första frågan i ett pass (då visas också passets tema)
@@ -135,6 +136,9 @@
     ctx: null, ut: null,
     starta() {
       try {
+        // vänta tills webbläsaren räknar trycket som en användarhandling (på pekskärm: när fingret lyfts)
+        const ua = navigator.userActivation;
+        if (!this.ctx && ua && !ua.isActive && !ua.hasBeenActive) return;
         if (!this.ctx) {
           this.ctx = new (window.AudioContext || window.webkitAudioContext)();
           this.ut = this.ctx.createGain(); this.ut.gain.value = 0.9; this.ut.connect(this.ctx.destination);
@@ -321,7 +325,7 @@
       if (ny !== pk.h) { inp.upp(pk.h, 'pek:' + e.pointerId); pk.h = ny; inp.ned(ny, 'pek:' + e.pointerId); }
     }
   });
-  const pekSlut = e => { clearTimeout(hornTimer); const pk = pekare.get(e.pointerId); if (pk) { inp.upp(pk.h, 'pek:' + e.pointerId); pekare.delete(e.pointerId); } };
+  const pekSlut = e => { clearTimeout(hornTimer); Ljud.starta(); const pk = pekare.get(e.pointerId); if (pk) { inp.upp(pk.h, 'pek:' + e.pointerId); pekare.delete(e.pointerId); } };
   canvas.addEventListener('pointerup', pekSlut);
   canvas.addEventListener('pointercancel', pekSlut);
   canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -557,7 +561,7 @@
       }
 
       const seg = valjSegment(miljo);
-      const grans = Math.min(p.slut - CONFIG.bana.passKant * v, p.vagvalX.length ? p.vagvalX[0] : Infinity);
+      const grans = Math.min(p.slut - CONFIG.bana.passKant * v, p.vagvalX.length ? p.vagvalX[0] - CONFIG.vagval.fritt * v : Infinity);
       if (S.nastaX + seg.len * v > grans) {
         // lappar som inte fått plats läggs i slutet av passet, så att ingen försvinner
         if (!p.vagvalX.length && p.lappX.length) {
@@ -571,7 +575,9 @@
       S.forraSegment = seg.id;
       laggSegment(seg, S.nastaX, v, miljo);
       const slutSeg = S.nastaX + seg.len * v;
-      S.nastaX = slutSeg + rnd(CONFIG.bana.luckaMin, CONFIG.bana.luckaMax) * v;
+      const dagNr = (p.info.vecka - 1) * 5 + (p.info.dag || 0);
+      const tathet = Math.max(CONFIG.bana.luckaMinst, 1 - CONFIG.bana.luckaPerDag * dagNr);
+      S.nastaX = slutSeg + rnd(CONFIG.bana.luckaMin, CONFIG.bana.luckaMax) * tathet * v;
       const mitt = (slutSeg + S.nastaX) / 2;
 
       // luckan efter segmentet: planeringslapp, kraftföremål eller extra material
@@ -646,14 +652,14 @@
     const forkX = x + V.inled * v, slutX = forkX + V.plattform * v;
     const pl = { x1: forkX, x2: slutX, y: MARK - V.hojd, tjock: V.tjock };
     const vv = {
-      typ: p.info.vagval, fraga, x, forkX, beslutX: forkX + V.beslut * v, pl, avgjord: false,
+      typ: p.info.vagval, fraga, x, forkX, pausX: x + V.pausVid * v, beslutX: forkX + V.beslut * v, pl, avgjord: false,
       ratt: Math.random() < 0.5 ? 'upp' : 'ner',   // slumpa om rätt svar ligger uppe eller nere
       miljo: p.info.miljo, pass: p
     };
     S.plattformar.push(pl);
     S.vagvalLista.push(vv);
     // hjärtan på den tomma sträckan före
-    for (let i = 0; i < 6; i++) laggForemal('gladje', x + (0.3 + i * 0.4) * v, Y_NIVA.m);
+    for (let i = 0; i < 3; i++) laggForemal('gladje', x + (0.35 + i * 0.35) * v, Y_NIVA.m);
     // glädje på båda vägarna
     for (let i = 0; i < 4; i++) {
       laggForemal('gladje', forkX + (0.5 + i * 0.28) * v, pl.y - 70);
@@ -1227,8 +1233,9 @@
     }
 
     // vilken fråga som ska visas just nu
-    // en fråga som väl visats ligger kvar tills vägvalet är avgjort (annars kan inbromsningen få den att dyka upp igen)
-    const nasta = S.vagvalLista.find(v => !v.avgjord && (v.visad || (v.beslutX - px) / S.fart < CONFIG.vagval.visaFore));
+    // frågan dyker upp på den tomma sträckan före vägvalet, när figuren står på marken.
+    // En fråga som väl visats ligger kvar tills vägvalet är avgjort.
+    const nasta = S.vagvalLista.find(v => !v.avgjord && (v.visad || (px >= v.pausX && (S.sp.paMark || px >= v.forkX - 0.6 * S.fart))));
     if (nasta && S.vagvalVisas !== nasta) {
       S.vagvalVisas = nasta; nasta.visadT = 0; S.resultat = null;
       if (!nasta.visad) { nasta.visad = true; const utv = nasta.typ === 'utvardering', forst = !nasta.pass.temaVisat; nasta.pass.temaVisat = true; nasta.visaTema = forst;

@@ -31,7 +31,12 @@ const TOOLS = [
     href: 'spel/begreppsslukaren.html', table: 'ArcadeScore', game: 'slukaren', unit: '',
     bg: 'var(--lk-lavender)', soft: 'var(--lk-sky)', time: '5–10 min',
     courses: ['Hälsopedagogik', 'Fritidskunskap', 'Pedagogik', 'AI-kunskap'],
-    desc: 'Ät rätt begrepp och väx! Spela mot bottar eller med hela klassen – läraren skapar ett rum och eleverna går med på mobilen.' }
+    desc: 'Ät rätt begrepp och väx! Spela mot bottar eller med hela klassen – läraren skapar ett rum och eleverna går med på mobilen.' },
+  { id: 'bfrush', title: 'BF-Rush', short: 'BF-Rush', type: 'Spel', program: 'BF', isNew: true,
+    href: 'spel/bf-rush/index.html', table: 'ArcadeScore', game: 'bfrush', unit: '',
+    bg: '#FF6B3D', soft: '#FFE1D4', time: '1–5 min',
+    courses: ['Pedagogik', 'Fritidskunskap', 'Hälsopedagogik'],
+    desc: 'Spring dig igenom en vecka på Barn- och fritidsprogrammet! Hoppa och glid förbi hinder, hjälp barn längs vägen och välj rätt i situationerna – från APL till HELG!' }
 ];
 const FEATURED_ID = 'nastaord';
 const COURSES = ['AI-kunskap', 'Hälsopedagogik', 'Fritidskunskap', 'Pedagogik'];
