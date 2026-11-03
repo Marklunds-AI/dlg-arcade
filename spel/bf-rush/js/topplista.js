@@ -58,6 +58,11 @@
     store.set('bfrush_basta', basta().filter(r => r.id !== id));
   }
   function nollstallDag(d = idag()) { store.set(dagNyckel(d), []); }
+  // Tömmer alla dagars listor och bästa någonsin (kön till Supabase lämnas orörd).
+  function nollstallAllt() {
+    datumLista().forEach(d => { try { localStorage.removeItem(dagNyckel(d)); } catch (e) {} });
+    store.set('bfrush_datum', []); store.set('bfrush_basta', []);
+  }
 
   // CSV för Excel (semikolon och BOM så att å, ä och ö blir rätt)
   function csv(d = idag()) {
@@ -119,7 +124,7 @@
   setTimeout(skickaKo, 3000);
 
   B.Topp = {
-    VISA, idag, dagens, basta, datumLista, placering, laggTill, taBort, nollstallDag, csv, arOk, normalisera,
+    VISA, idag, dagens, basta, datumLista, placering, laggTill, taBort, nollstallDag, nollstallAllt, csv, arOk, normalisera,
     koLangd: () => store.get('bfrush_ko', []).length, skickaKo,
     sattTestDatum(d) { testDatum = d; }
   };

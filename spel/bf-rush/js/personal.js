@@ -97,7 +97,10 @@
         <small>Borttagna namn försvinner bara här i montern. I Supabase tar du bort dem i Table Editor (tabellen ArcadeScore).</small>
       </div>
 
-      <div class="sekt"><h2>Bästa någonsin</h2>${tabell(basta, null)}</div>
+      <div class="sekt"><h2>Bästa någonsin</h2>${tabell(basta, null)}
+        <div class="rad"><button class="fara" data-nollstall-allt>Töm alla listor</button></div>
+        <small>Tömmer dagens lista, alla tidigare dagar och bästa någonsin här i webbläsaren.</small>
+      </div>
 
       <div class="sekt"><h2>Inställningar</h2>
         <div class="rad"><button data-ljud>Ljud: ${api.ljudPa() ? 'PÅ' : 'AV'}</button><button data-musik>Musik: ${api.musikPa() ? 'PÅ' : 'AV'}</button><button data-fps>FPS: ${api.CONFIG.visaFps ? 'visas' : 'dold'}</button></div>
@@ -118,6 +121,7 @@
     });
     const nollstall = $('[data-nollstall]');
     if (nollstall) nollstall.onclick = () => { if (confirm('Nollställa hela dagens lista? Det går inte att ångra.')) { T.nollstallDag(); visaMeny(datum); } };
+    $('[data-nollstall-allt]').onclick = () => { if (confirm('Tömma ALLA listor, även bästa någonsin? Det går inte att ångra.')) { T.nollstallAllt(); visaMeny(idag); } };
     $('[data-csv]').onclick = () => {
       const blob = new Blob([T.csv(datum)], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `bf-rush-${datum}.csv`;
