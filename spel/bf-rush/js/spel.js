@@ -272,7 +272,7 @@
   addEventListener('keydown', e => {
     if (S.personalOppen) return;                         // personalmenyn tar hand om tangentbordet
     aktivitet();
-    if (e.ctrlKey && e.shiftKey && e.code === 'KeyB') { e.preventDefault(); oppnaPersonal(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyB') { e.preventDefault(); oppnaPersonal(); return; }
     if (S.lage === 'namn') { e.preventDefault(); namnTangent(e); return; }
     if (S.lage === 'paus' && !e.repeat) {
       // pausmenyn: pil upp/ner väljer, mellanslag/Enter bekräftar, P/Esc fortsätter
@@ -2105,6 +2105,8 @@
     Topp: T, MONTER, Musik, startaAttract, oppnaPersonal, fps: () => fps
   };
   if (MONTER) document.title = 'BF-Rush – monter';
+  // ?personal=1 öppnar personalmenyn direkt (PIN krävs fortfarande)
+  if (new URLSearchParams(location.search).get('personal') === '1') setTimeout(oppnaPersonal, 300);
 
   const startaLoop = () => { forra = performance.now(); requestAnimationFrame(loop); canvas.focus({ preventScroll: true }); };
   Promise.race([document.fonts ? document.fonts.load(font(40)) : Promise.resolve(), new Promise(r => setTimeout(r, 1500))]).then(startaLoop, startaLoop);

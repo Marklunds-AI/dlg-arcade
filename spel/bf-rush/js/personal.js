@@ -1,5 +1,5 @@
 /* BF-Rush – personalmenyn (dold).
-   Öppnas genom att hålla nere övre vänstra hörnet i 3 s eller med Ctrl+Shift+B. Kräver PIN (CONFIG.personalPin).
+   Öppnas genom att hålla nere övre vänstra hörnet i 3 s eller med Ctrl+Shift+B (⌘+Shift+B på Mac), eller med ?personal=1 i adressen. Kräver PIN (CONFIG.personalPin).
    Här kan personalen ta bort enskilda namn, nollställa dagens lista, exportera listan som CSV,
    stänga av ljudet, ändra svårighetsgraden och visa FPS. */
 (function () {

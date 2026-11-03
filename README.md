@@ -108,7 +108,7 @@ Styrning: hoppa = mellanslag/↑/W, övre halvan av skärmen eller A på handkon
 
 ### Personalmenyn
 
-Håll nere **övre vänstra hörnet i 3 sekunder** eller tryck **Ctrl+Shift+B**. PIN-koden är **2468** (ändras i `CONFIG.personalPin`). I menyn kan du:
+Håll nere **övre vänstra hörnet i 3 sekunder** eller tryck **Ctrl+Shift+B** (⌘+Shift+B på Mac). Du kan också lägga till `?personal=1` i adressen, till exempel `spel/bf-rush/index.html?monter=1&personal=1`. PIN-koden är **2468** (ändras i `CONFIG.personalPin`). I menyn kan du:
 
 - **ta bort ett enskilt resultat** (t.ex. ett olämpligt namn) från dagens lista eller Bästa någonsin
 - **exportera listan som CSV**. Den öppnas rätt i Excel och har med namn, skola, poäng, inriktning och tid, så att ni hittar vinnaren. Välj datum i listan för att exportera en tidigare dag.
