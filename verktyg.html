@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Alla verktyg – DLG Arcade</title>
+<title>Alla spel – DLG Arcade</title>
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/arcade.css">
 </head>
@@ -14,20 +14,17 @@
   <main>
     <div class="wrap lib-page">
       <div class="page-title">
-        <h1>Alla <span>verktyg</span></h1>
-        <p>Hitta spel och övningar för dina kurser.</p>
+        <h1>Alla <span>spel</span></h1>
+        <p>Hitta spel för dina kurser – eller sök på ett begrepp.</p>
       </div>
 
       <div class="filters">
         <div class="filter-row">
           <label class="search"><span id="search-icon"></span>
-            <input type="search" id="q" placeholder="Sök verktyg eller begrepp" aria-label="Sök">
+            <input type="search" id="q" placeholder="Sök spel eller begrepp, t.ex. KASAM" aria-label="Sök">
           </label>
           <select class="select" id="course" aria-label="Ämne eller kurs"></select>
-          <select class="select" id="program" aria-label="Program" style="flex-basis:160px">
-            <option value="">Alla program</option>
-            <option value="BF">Barn- och fritid (BF)</option>
-          </select>
+          <select class="select" id="program" aria-label="Program"></select>
         </div>
         <div class="filter-foot">
           <div class="chips" id="chips" role="group" aria-label="Filtrera"></div>
@@ -37,7 +34,7 @@
 
       <div class="grid lib" id="lib-grid"></div>
       <div class="no-hits" id="no-hits" hidden>
-        <strong>Inga verktyg matchar din sökning.</strong>
+        <strong>Inga spel matchar din sökning.</strong>
         <button class="btn btn-inverse btn-md" id="clear">Rensa filter</button>
       </div>
     </div>
@@ -46,24 +43,47 @@
   <div id="site-footer"></div>
 </div>
 
+<script src="assets/js/banor.js"></script>
 <script src="assets/js/arcade.js"></script>
 <script>
 renderChrome('verktyg');
 $('#search-icon').outerHTML = icon('search', 20, '#C8CACD');
 $('#course').innerHTML = '<option value="">Alla ämnen</option>' + COURSES.map(c => `<option>${esc(c)}</option>`).join('');
+// Programfiltret byggs från TOOLS och visas bara när det finns något att välja mellan.
+const programs = [...new Set(TOOLS.map(t => t.program).filter(p => p !== 'Alla program'))];
+$('#program').innerHTML = '<option value="">Alla program</option>' + programs.map(p => `<option value="${esc(p)}">${esc(PROGRAMS[p] || p)}</option>`).join('');
+$('#program').hidden = programs.length === 0;
+
+const norm = s => String(s).toLowerCase();
+// Första banan i spelet där sökordet finns som begrepp, i en definition eller i banans namn.
+function banaHit(t, q) {
+  for (const b of toolBanor(t)) {
+    if (norm(b.namn).includes(q)) return { bana: b.id, text: 'Banan ' + b.namn };
+    const c = b.begrepp.find(x => norm(x.ord).includes(q)) || b.begrepp.find(x => norm(x.def).includes(q));
+    if (c) return { bana: b.id, text: `${c.ord} – i banan ${b.namn}` };
+  }
+  return null;
+}
 
 const f = { type: 'Alla', course: '', program: '', q: '', onlyNew: false };
 function render() {
-  const q = f.q.trim().toLowerCase();
-  const list = TOOLS.filter(t => (f.type === 'Alla' || t.type === f.type)
-    && (!f.course || t.courses.includes(f.course))
-    && (!f.program || t.program === f.program || t.program === 'Alla program')
-    && (!f.onlyNew || t.isNew)
-    && (!q || (t.title + ' ' + t.desc + ' ' + t.courses.join(' ')).toLowerCase().includes(q)));
-  $('#lib-grid').innerHTML = list.map(t => cardHTML(t, 'lib')).join('');
+  const q = norm(f.q.trim());
+  const list = [];
+  for (const t of TOOLS) {
+    if (!((f.type === 'Alla' || t.type === f.type)
+      && (!f.course || t.courses.includes(f.course))
+      && (!f.program || t.program === f.program || t.program === 'Alla program')
+      && (!f.onlyNew || t.isNew))) continue;
+    const own = !q || norm(t.title + ' ' + t.desc + ' ' + t.courses.join(' ')).includes(q);
+    const hit = q && q.length >= 2 ? banaHit(t, q) : null;
+    if (own || hit) list.push([t, own ? null : hit]);
+  }
+  $('#lib-grid').innerHTML = list.map(([t, hit]) => cardHTML(t, 'lib', hit)).join('');
+  fitText('#lib-grid .card .title');
   $('#no-hits').hidden = list.length > 0;
-  $('#count').textContent = list.length === 1 ? '1 verktyg' : list.length + ' verktyg';
-  $('#chips').innerHTML = ['Alla', 'Spel', 'Quiz', 'Övning'].map(l =>
+  $('#count').textContent = list.length === 1 ? '1 spel' : list.length + ' spel';
+  const types = TYPES.length > 1 ? ['Alla', ...TYPES] : [];
+  $('#chips').innerHTML = types.map(l =>
     `<button class="chip" aria-pressed="${f.type === l}" data-type="${l}">${l}</button>`).join('') +
     `<button class="chip" aria-pressed="${f.onlyNew}" data-new="1">Bara nya</button>`;
 }

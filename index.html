@@ -21,7 +21,7 @@
         <p class="tagline">Lär dig begreppen. <em>Slå rekordet.</em></p>
         <div class="actions">
           <a class="btn btn-inverse" id="play-featured" href="#">Börja spela <span id="arrow1"></span></a>
-          <a class="btn btn-secondary" href="verktyg.html">Se alla verktyg</a>
+          <a class="btn btn-secondary" href="verktyg.html">Se alla spel</a>
         </div>
       </div>
       <div class="hero-art" aria-hidden="false">
@@ -46,17 +46,25 @@
             <div class="chips" id="type-chips" role="group" aria-label="Filtrera på typ"></div>
           </div>
           <div class="grid" id="start-grid"></div>
-          <div class="empty" id="start-empty" hidden>Det finns inga verktyg av den typen än.</div>
+          <div class="empty" id="start-empty" hidden>Det finns inga spel av den typen än.</div>
         </div>
 
-        <aside class="scores" aria-labelledby="hs-title">
+        <aside class="scores" aria-labelledby="hs-title" id="lb">
           <div class="scores-head">
             <h2 id="hs-title">High score</h2>
             <span>Hela skolan</span>
           </div>
-          <div class="seg" id="lb-tabs" role="group" aria-label="Välj topplista"></div>
+          <div class="lb-nav">
+            <button class="lb-arrow" id="lb-prev" aria-label="Föregående spel"></button>
+            <a class="lb-game" id="lb-game" href="#"></a>
+            <button class="lb-arrow" id="lb-next" aria-label="Nästa spel"></button>
+          </div>
           <div class="rows" id="lb-rows" aria-live="polite"></div>
-          <div class="note">Topplistorna uppdateras direkt när någon sparar ett resultat.</div>
+          <div class="lb-foot">
+            <div class="lb-dots" id="lb-dots" role="group" aria-label="Välj spel"></div>
+            <button class="lb-pause" id="lb-pause"></button>
+          </div>
+          <div class="note">Listan byter spel av sig själv. Topplistorna uppdateras direkt när någon sparar ett resultat.</div>
         </aside>
       </div>
     </section>
@@ -69,21 +77,24 @@
 <script>
 renderChrome('start');
 
-const featured = toolById(FEATURED_ID);
+const featured = featuredTool();
 $('#featured-title').textContent = featured.title;
-$('#play-featured').href = $('#cassette').href = 'spela.html?spel=' + featured.id;
+fitText('#featured-title', 20);
+$('#play-featured').href = $('#cassette').href = playHref(featured);
 $('#arrow1').outerHTML = icon('arrow-right', 21);
 $('#arrow2').outerHTML = icon('arrow-right', 22);
 
-/* Typfilter */
+/* Typfilter – visas bara när det finns mer än en typ */
 let type = 'Alla';
 function renderGrid() {
   const list = TOOLS.filter(t => type === 'Alla' || t.type === type);
   const more = (type === 'Alla' || type === 'Spel') ? `<div class="more"><strong>Nästa spel laddas…</strong><span>Fler spel om AI och begrepp läggs upp här.</span></div>` : '';
   $('#start-grid').innerHTML = list.map(t => cardHTML(t)).join('') + more;
   $('#start-empty').hidden = list.length > 0;
-  $('#type-chips').innerHTML = ['Alla', 'Spel', 'Quiz', 'Övning'].map(l =>
+  $('#type-chips').hidden = TYPES.length < 2;
+  $('#type-chips').innerHTML = ['Alla', ...TYPES].map(l =>
     `<button class="chip" aria-pressed="${l === type}" data-type="${l}">${l}</button>`).join('');
+  fitText('#start-grid .card .title');
 }
 $('#type-chips').addEventListener('click', e => {
   const b = e.target.closest('[data-type]'); if (!b) return;
@@ -91,36 +102,49 @@ $('#type-chips').addEventListener('click', e => {
 });
 renderGrid();
 
-/* Topplistor */
-const LB_TABS = [['alla', 'Alla'], ...TOOLS.map(t => [t.id, t.id === 'racet' ? 'Racet' : t.id === 'snake' ? 'Snake' : t.short])];
-let lbTab = 'alla';
+/* Topplistor: ett spel i taget. Bläddrar själv var 7:e sekund, men står still när man
+   håller musen över listan, har fokus i den eller har tryckt på paus. */
+const LB_MS = 7000;
 const cache = {};
-function loadTool(t) {
-  if (!cache[t.id]) cache[t.id] = fetchTop(t, 5).catch(() => null);
-  return cache[t.id];
-}
+const loadTool = t => cache[t.id] || (cache[t.id] = fetchTop(t, 5).catch(() => { delete cache[t.id]; return null; }));
+let lbIndex = Math.max(0, TOOLS.indexOf(featured));
+let lbPaused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lbHold = false, lbTimer = null;
+
 async function renderLB() {
-  $('#lb-tabs').innerHTML = LB_TABS.map(([id, l]) => `<button aria-pressed="${id === lbTab}" data-tab="${id}">${esc(l)}</button>`).join('');
+  const t = TOOLS[lbIndex];
+  $('#lb-game').innerHTML = `<b>${esc(t.title)}</b><small>${lbIndex + 1} av ${TOOLS.length}</small>`;
+  $('#lb-game').href = playHref(t);
+  $('#lb-dots').innerHTML = TOOLS.map((x, i) =>
+    `<button data-i="${i}" aria-label="${esc(x.title)}" aria-pressed="${i === lbIndex}"></button>`).join('');
   const box = $('#lb-rows');
-  box.innerHTML = statusHTML('Hämtar resultat…');
-  const tab = lbTab;
-  if (tab === 'alla') {
-    const all = await Promise.all(TOOLS.map(loadTool));
-    if (tab !== lbTab) return;
-    const ok = all.filter(Boolean);
-    if (!ok.length) { box.innerHTML = statusHTML('Topplistan kunde inte hämtas just nu.'); return; }
-    box.innerHTML = rowsHTML(ok.flat().sort((a, b) => b.score - a.score).slice(0, 5), true);
-  } else {
-    const rows = await loadTool(toolById(tab));
-    if (tab !== lbTab) return;
-    box.innerHTML = rows ? rowsHTML(rows, false) : statusHTML('Topplistan kunde inte hämtas just nu.');
-  }
+  if (!cache[t.id]) box.innerHTML = statusHTML('Hämtar resultat…');
+  const rows = await loadTool(t);
+  if (TOOLS[lbIndex] !== t) return;
+  box.innerHTML = rows ? rowsHTML(rows, false) : statusHTML('Topplistan kunde inte hämtas just nu.');
 }
-$('#lb-tabs').addEventListener('click', e => {
-  const b = e.target.closest('[data-tab]'); if (!b) return;
-  lbTab = b.dataset.tab; renderLB();
-});
+function lbGo(i) { lbIndex = (i + TOOLS.length) % TOOLS.length; renderLB(); lbSchedule(); }
+function lbSchedule() {
+  clearTimeout(lbTimer);
+  $('#lb-pause').innerHTML = lbPaused ? icon('play', 16) + 'Bläddra själv' : icon('pause', 16) + 'Pausa';
+  $('#lb-pause').setAttribute('aria-pressed', lbPaused);
+  if (!lbPaused && !lbHold) lbTimer = setTimeout(() => lbGo(lbIndex + 1), LB_MS);
+}
+$('#lb-prev').innerHTML = icon('chevron-left', 22);
+$('#lb-next').innerHTML = icon('chevron-right', 22);
+$('#lb-prev').addEventListener('click', () => lbGo(lbIndex - 1));
+$('#lb-next').addEventListener('click', () => lbGo(lbIndex + 1));
+$('#lb-dots').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) lbGo(+b.dataset.i); });
+$('#lb-pause').addEventListener('click', () => { lbPaused = !lbPaused; lbSchedule(); });
+const lb = $('#lb');
+const hold = on => () => { lbHold = on; lbSchedule(); };
+lb.addEventListener('mouseenter', hold(true));
+lb.addEventListener('mouseleave', hold(false));
+lb.addEventListener('focusin', hold(true));
+lb.addEventListener('focusout', e => { if (!lb.contains(e.relatedTarget)) hold(false)(); });
+TOOLS.forEach(loadTool);   // hämta alla listor direkt, så att bläddringen inte väntar
 renderLB();
+lbSchedule();
 </script>
 </body>
 </html>

@@ -8,9 +8,10 @@ Spelsajt för elever på De la Gardiegymnasiet, Lidköping. Här tränar elevern
 
 | Fil | Vad |
 |---|---|
-| `index.html` | Startsida med veckans spel, spelväljare och topplista |
-| `verktyg.html` | Alla verktyg, med sök och filter |
-| `spela.html?spel=<id>` | Spelsida: spelet i en ram, info och topplista |
+| `index.html` | Startsida med veckans spel, spelväljare och topplista (bläddrar mellan spelen) |
+| `verktyg.html` | Alla spel, med filter och sök – sökningen hittar även begrepp i banorna |
+| `spela.html?spel=<id>` | Spelsida: spelet i en ram, info, banor och topplista. `&bana=<id>&niva=<latt/normal/hardcore>` skickas vidare till spelet |
+| `larare.html` | För lärare: dela en bana med länk och QR-kod, klassrumsläget, alla banor, monterläget |
 | `spel/` | Själva spelen, en fristående HTML-fil per spel |
 | `assets/js/arcade.js` | **Spelkatalogen (`TOOLS`)** och gemensam kod |
 | `assets/css/arcade.css` | Utseende, byggt på Lidköpings kommuns designsystem |
@@ -156,8 +157,14 @@ De viktigaste siffrorna i `CONFIG`: `fart.vecka1` (farten måndag–fredag), `fa
 ## Lägga till ett spel
 
 1. Kopiera `spel/begreppsinvaders.html`, byt `id` och skriv din spelmekanik i `starta(ctx)`.
-2. Lägg till en rad i `TOOLS` i `assets/js/arcade.js` med `table: 'ArcadeScore'` och `game: '<spelets id>'`.
+2. Lägg till en rad i `TOOLS` i `assets/js/arcade.js` med `table: 'ArcadeScore'`, `game: '<spelets id>'`, `added: '<dagens datum>'` och `banor: 'begrepp'` (eller `'sprak'` för språkbanor).
 3. Klart – ingen ny tabell behövs. (Lägg gärna till ett poängtak för spelet i `supabase/arcade-score.sql`.)
+
+Resten sköter sig självt:
+
+- **Nytt:** spelet får märket i 14 dagar efter `added` (`NEW_DAYS`).
+- **Veckans spel:** ett spel som lagts till den senaste veckan blir veckans spel. Annars turas alla spel om, ett per vecka (byte på måndagar). Vill du låsa ett spel skriver du dess id i `FEATURED_ID`.
+- **Topplistan** på startsidan, filtren (typ, ämne, program) och lärarsidan läser från `TOOLS`. Typfilter visas bara när det finns mer än en typ. Program får ett längre namn i `PROGRAMS`.
 
 Äldre spel (Begreppsracet, Begrepps-Snake, Nästa ord) har egna banor och egna tabeller tills de flyttas över.
 

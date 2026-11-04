@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>För lärare – DLG Arcade</title>
+<meta name="description" content="Dela en bana med klassen, spela tillsammans i klassrummet och se alla begreppsbanor.">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/arcade.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <div class="wrap teach-page">
+      <div class="page-title">
+        <h1>För <span>lärare</span></h1>
+        <p>Dela en bana med klassen, spela tillsammans och se vilka begrepp som finns.</p>
+      </div>
+
+      <nav class="teach-toc" aria-label="På sidan">
+        <a href="#dela">Dela en bana</a>
+        <a href="#klassrum">Spela med hela klassen</a>
+        <a href="#banor">Alla banor</a>
+        <a href="#monter">Monterläget</a>
+        <a href="#spelen">Vad kan spelen?</a>
+      </nav>
+
+      <section class="teach-block" id="dela" aria-labelledby="dela-h">
+        <div class="teach-head">
+          <h2 id="dela-h">Dela en bana med klassen</h2>
+          <p>Välj spel, bana och nivå. Eleverna som öppnar länken eller skannar QR-koden hamnar direkt i rätt bana.</p>
+        </div>
+        <div class="share">
+          <div class="share-form">
+            <label class="field"><span>Spel</span><select class="select" id="s-spel"></select></label>
+            <label class="field"><span>Bana</span><select class="select" id="s-bana"></select></label>
+            <fieldset class="field">
+              <legend>Nivå</legend>
+              <div class="chips" id="s-niva"></div>
+            </fieldset>
+            <label class="check"><input type="checkbox" id="s-direkt"> Öppna bara spelet, utan sajten runt om</label>
+            <div class="field">
+              <span>Länk</span>
+              <div class="link-row">
+                <input class="select" id="s-url" readonly aria-label="Länk att dela">
+                <button class="btn btn-yellow btn-md" id="s-copy"></button>
+              </div>
+              <small class="hint" id="s-copied" aria-live="polite"></small>
+            </div>
+          </div>
+          <div class="share-qr">
+            <canvas id="s-qr" width="240" height="240" aria-label="QR-kod till länken"></canvas>
+            <button class="btn btn-secondary btn-md" id="s-big">Visa QR-koden stort</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="teach-block" id="klassrum" aria-labelledby="klass-h">
+        <div class="teach-head">
+          <h2 id="klass-h">Spela med hela klassen</h2>
+          <p>I Begreppsslukaren tävlar hela klassen på samma karta. Din skärm visas på tavlan och eleverna styr från mobilen.</p>
+        </div>
+        <ol class="steps">
+          <li><b>Skapa ett rum.</b> Välj bana, hur lång omgången ska vara och nivå.</li>
+          <li><b>Visa skärmen på tavlan.</b> Eleverna går till Begreppsslukaren, trycker <i>Gå med i klassrum</i> och skriver koden på fyra tecken.</li>
+          <li><b>Starta när alla är med.</b> Du kan pausa, avsluta och ta bort olämpliga alias.</li>
+          <li><b>Prata om resultatet.</b> Slutskärmen visar klassens fem mest missade begrepp med definition.</li>
+        </ol>
+        <p class="note-text">Ha din flik öppen hela tiden – den kör spelet. Klassrumsrundor sparas inte i topplistan.</p>
+        <a class="btn btn-yellow" href="spel/begreppsslukaren-larare.html" target="_blank" rel="noopener">Skapa ett klassrum <span id="arrow-klass"></span></a>
+      </section>
+
+      <section class="teach-block" id="banor" aria-labelledby="banor-h">
+        <div class="teach-head">
+          <h2 id="banor-h">Alla banor</h2>
+          <p>Banorna finns i alla spel som har banbanken. Klicka på en bana för att se begreppen.</p>
+        </div>
+        <div class="ban-groups" id="ban-groups"></div>
+        <p class="note-text"><b>Egna banor:</b> välj <i>Skapa egen bana</i> på spelets startskärm och klistra in begreppen, ett per rad. En egen bana sparas bara i den webbläsaren där den skapades, så den går inte att dela med en länk. Vill du att en bana ska finnas för alla – hör av dig så läggs den in.</p>
+      </section>
+
+      <section class="teach-block" id="monter" aria-labelledby="monter-h">
+        <div class="teach-head">
+          <h2 id="monter-h">Monterläget i BF-Rush</h2>
+          <p>För mässor och öppet hus. Spelet fungerar utan nät, visar dagens topp 10 och rullar en demo när ingen spelar.</p>
+        </div>
+        <ol class="steps">
+          <li><b>Öppna monterläget</b> med knappen nedan.</li>
+          <li><b>Tryck F</b> för helskärm, och tryck en gång på skärmen så att ljudet startar.</li>
+          <li><b>Personalmenyn</b> öppnas med Ctrl+Shift+B (⌘+Shift+B på Mac). Där tar du bort namn, exporterar listan och nollställer dagen.</li>
+        </ol>
+        <a class="btn btn-yellow" href="spel/bf-rush/index.html?monter=1" target="_blank" rel="noopener">Öppna monterläget <span id="arrow-monter"></span></a>
+      </section>
+
+      <section class="teach-block" id="spelen" aria-labelledby="spelen-h">
+        <div class="teach-head">
+          <h2 id="spelen-h">Vad kan spelen?</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="feat-table">
+            <thead><tr><th scope="col">Spel</th><th scope="col">Banbanken och direktlänk</th><th scope="col">Hela klassen</th><th scope="col">Tid</th><th scope="col">Kurser</th></tr></thead>
+            <tbody id="feat-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+</div>
+
+<div class="qr-big" id="qr-big" hidden role="dialog" aria-modal="true" aria-label="QR-kod">
+  <canvas id="qr-big-canvas" width="640" height="640"></canvas>
+  <div class="qr-big-text" id="qr-big-text"></div>
+  <button class="btn btn-inverse" id="qr-close">Stäng</button>
+</div>
+
+<script src="assets/js/banor.js"></script>
+<script src="assets/js/arcade.js"></script>
+<!-- QR-koden ritas med BF-Rushs egen generator (fungerar utan nät och utan externa bibliotek). -->
+<script src="spel/bf-rush/js/qr.js"></script>
+<script>
+renderChrome('larare');
+$('#arrow-klass').outerHTML = icon('arrow-right', 20);
+$('#arrow-monter').outerHTML = icon('arrow-right', 20);
+
+/* ---------- Dela en bana ---------- */
+const NIVAER = [['latt', 'Lätt'], ['normal', 'Normal'], ['hardcore', 'Hardcore']];
+const banSpel = TOOLS.filter(t => toolBanor(t).length);
+const s = { spel: banSpel[0].id, bana: '', niva: 'normal', direkt: false };
+
+$('#s-spel').innerHTML = banSpel.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
+function fillBanor() {
+  const banor = toolBanor(toolById(s.spel));
+  const kurser = [...new Set(banor.map(b => b.kurs))];
+  $('#s-bana').innerHTML = kurser.map(k => `<optgroup label="${esc(k)}">` +
+    banor.filter(b => b.kurs === k).map(b => `<option value="${b.id}">${esc(b.namn)} (${b.begrepp.length} begrepp)</option>`).join('') +
+    '</optgroup>').join('');
+  if (!banor.some(b => b.id === s.bana)) s.bana = banor[0].id;
+  $('#s-bana').value = s.bana;
+}
+function shareUrl() {
+  const t = toolById(s.spel);
+  const rel = s.direkt ? `${t.href}?bana=${encodeURIComponent(s.bana)}&niva=${s.niva}` : playHref(t, s.bana, s.niva);
+  return new URL(rel, location.href).href;
+}
+function drawQR(canvas, text) {
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const qr = window.BFR && BFR.qr(text);
+  if (!qr) return false;
+  const n = qr.storlek + 8;   // 4 moduler tyst zon runt om
+  const m = Math.floor(canvas.width / n), off = Math.floor((canvas.width - m * n) / 2) + 4 * m;
+  ctx.fillStyle = '#242422';
+  for (let y = 0; y < qr.storlek; y++) for (let x = 0; x < qr.storlek; x++)
+    if (qr.mork(x, y)) ctx.fillRect(off + x * m, off + y * m, m, m);
+  return true;
+}
+function renderShare() {
+  $('#s-niva').innerHTML = NIVAER.map(([id, namn]) =>
+    `<button type="button" class="chip" data-niva="${id}" aria-pressed="${id === s.niva}">${namn}</button>`).join('');
+  const url = shareUrl();
+  $('#s-url').value = url;
+  $('#s-copied').textContent = '';
+  drawQR($('#s-qr'), url);
+}
+$('#s-copy').innerHTML = icon('copy', 18) + 'Kopiera';
+$('#s-spel').addEventListener('change', e => { s.spel = e.target.value; fillBanor(); renderShare(); });
+$('#s-bana').addEventListener('change', e => { s.bana = e.target.value; renderShare(); });
+$('#s-niva').addEventListener('click', e => { const b = e.target.closest('[data-niva]'); if (b) { s.niva = b.dataset.niva; renderShare(); } });
+$('#s-direkt').addEventListener('change', e => { s.direkt = e.target.checked; renderShare(); });
+$('#s-url').addEventListener('focus', e => e.target.select());
+$('#s-copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(shareUrl()); $('#s-copied').textContent = 'Länken är kopierad.'; }
+  catch (e) { $('#s-url').select(); $('#s-copied').textContent = 'Markera länken och kopiera med Ctrl+C.'; }
+});
+
+const big = $('#qr-big');
+$('#s-big').addEventListener('click', () => {
+  const t = toolById(s.spel), b = DLG_BANOR.find(x => x.id === s.bana);
+  drawQR($('#qr-big-canvas'), shareUrl());
+  $('#qr-big-text').innerHTML = `<b>${esc(t.title)}</b><span>${esc(b.namn)} · ${NIVAER.find(n => n[0] === s.niva)[1]}</span>`;
+  big.hidden = false; $('#qr-close').focus();
+});
+const closeBig = () => { big.hidden = true; $('#s-big').focus(); };
+$('#qr-close').addEventListener('click', closeBig);
+big.addEventListener('click', e => { if (e.target === big) closeBig(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && !big.hidden) closeBig(); });
+
+fillBanor();
+renderShare();
+
+/* ---------- Alla banor ---------- */
+const kurser = [...new Set(DLG_BANOR.map(b => b.kurs))];
+$('#ban-groups').innerHTML = kurser.map(k => `<div class="ban-group">
+  <h3>${esc(k)}</h3>
+  ${DLG_BANOR.filter(b => b.kurs === k).map(b => {
+    const spel = TOOLS.filter(t => toolBanor(t).includes(b));
+    return `<details class="ban">
+      <summary><b>${esc(b.namn)}</b><span>${b.begrepp.length} begrepp</span></summary>
+      <dl>${b.begrepp.map(c => `<div><dt>${esc(c.ord)}</dt><dd>${esc(c.def)}</dd></div>`).join('')}</dl>
+      <div class="ban-play">Spela i: ${spel.map(t => `<a href="${playHref(t, b.id)}">${esc(t.title)}</a>`).join(' · ')}</div>
+    </details>`;
+  }).join('')}
+</div>`).join('');
+
+/* ---------- Vad kan spelen? ---------- */
+const KLASSRUM = { slukaren: 'Ja, klassrumsläget', bfrush: 'Monterläget' };
+$('#feat-rows').innerHTML = TOOLS.map(t => `<tr>
+  <th scope="row"><a href="${playHref(t)}">${esc(t.title)}</a></th>
+  <td data-label="Banbanken">${toolBanor(t).length ? 'Ja, ' + toolBanor(t).length + ' banor' : 'Egna listor i spelet'}</td>
+  <td data-label="Hela klassen">${KLASSRUM[t.id] || '–'}</td>
+  <td data-label="Tid">${esc(t.time)}</td>
+  <td data-label="Kurser">${esc(t.courses.join(', '))}</td>
+</tr>`).join('');
+</script>
+</body>
+</html>
