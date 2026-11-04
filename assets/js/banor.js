@@ -6,6 +6,7 @@
    - namn:    det eleverna ser
    - kurs:    Hälsopedagogik, Fritidskunskap, Pedagogik, AI-kunskap ... (används för att gruppera)
    - begrepp: minst 4 st, varje med ord och def (definition)
+   - sprak:   (valfritt) språkbanor för ¡Habla!, t.ex. 'es-ES'. Då är ord = spanska (med artikel) och def = svenska.
 */
 window.DLG_BANOR = [
   {
@@ -82,6 +83,128 @@ window.DLG_BANOR = [
       { ord: "Algoritm", def: "En steg-för-steg-instruktion som en dator följer för att lösa en uppgift." },
       { ord: "Maskininlärning", def: "När en dator lär sig mönster från exempel i stället för att få varje regel programmerad." },
       { ord: "Chattbot", def: "Ett program man kan skriva med som svarar i textform, till exempel ChatGPT eller Claude." }
+    ]
+  },
+  {
+    id: "es-saludos", namn: "Saludos y frases", kurs: "Spanska", sprak: "es-ES",
+    begrepp: [
+      { ord: "hola", def: "hej" },
+      { ord: "buenos días", def: "god morgon" },
+      { ord: "buenas tardes", def: "god eftermiddag" },
+      { ord: "buenas noches", def: "god kväll / god natt" },
+      { ord: "adiós", def: "hej då" },
+      { ord: "hasta luego", def: "vi ses" },
+      { ord: "hasta mañana", def: "vi ses i morgon" },
+      { ord: "por favor", def: "snälla / var så snäll" },
+      { ord: "gracias", def: "tack" },
+      { ord: "de nada", def: "ingen orsak" },
+      { ord: "perdón", def: "förlåt" },
+      { ord: "¿Cómo estás?", def: "Hur mår du?" },
+      { ord: "muy bien", def: "mycket bra" },
+      { ord: "¿Cómo te llamas?", def: "Vad heter du?" },
+      { ord: "me llamo", def: "jag heter" },
+      { ord: "mucho gusto", def: "trevligt att träffas" },
+      { ord: "¿De dónde eres?", def: "Var kommer du ifrån?" },
+      { ord: "soy de Suecia", def: "jag kommer från Sverige" }
+    ]
+  },
+  {
+    id: "es-familia", namn: "La familia", kurs: "Spanska", sprak: "es-ES",
+    begrepp: [
+      { ord: "la familia", def: "familjen" },
+      { ord: "la madre", def: "mamman" },
+      { ord: "el padre", def: "pappan" },
+      { ord: "los padres", def: "föräldrarna" },
+      { ord: "el hermano", def: "brodern" },
+      { ord: "la hermana", def: "systern" },
+      { ord: "los hermanos", def: "syskonen" },
+      { ord: "el abuelo", def: "farfar / morfar" },
+      { ord: "la abuela", def: "farmor / mormor" },
+      { ord: "los abuelos", def: "far- och morföräldrarna" },
+      { ord: "el hijo", def: "sonen" },
+      { ord: "la hija", def: "dottern" },
+      { ord: "el tío", def: "farbrodern / morbrodern" },
+      { ord: "la tía", def: "fastern / mostern" },
+      { ord: "el primo", def: "kusinen (kille)" },
+      { ord: "la prima", def: "kusinen (tjej)" },
+      { ord: "el marido", def: "maken" },
+      { ord: "la mujer", def: "frun / kvinnan" },
+      { ord: "el bebé", def: "bebisen" }
+    ]
+  },
+  {
+    id: "es-comida", namn: "La comida", kurs: "Spanska", sprak: "es-ES",
+    begrepp: [
+      { ord: "la comida", def: "maten" },
+      { ord: "la manzana", def: "äpplet" },
+      { ord: "el pan", def: "brödet" },
+      { ord: "el agua", def: "vattnet" },
+      { ord: "la leche", def: "mjölken" },
+      { ord: "el queso", def: "osten" },
+      { ord: "el huevo", def: "ägget" },
+      { ord: "la carne", def: "köttet" },
+      { ord: "el pollo", def: "kycklingen" },
+      { ord: "el pescado", def: "fisken (som mat)" },
+      { ord: "la fruta", def: "frukten" },
+      { ord: "la verdura", def: "grönsaken" },
+      { ord: "el arroz", def: "riset" },
+      { ord: "la naranja", def: "apelsinen" },
+      { ord: "el plátano", def: "bananen" },
+      { ord: "el tomate", def: "tomaten" },
+      { ord: "la patata", def: "potatisen" },
+      { ord: "el café", def: "kaffet" },
+      { ord: "el zumo", def: "juicen" },
+      { ord: "el desayuno", def: "frukosten" }
+    ]
+  },
+  {
+    id: "es-colores-numeros", namn: "Colores y números 1–20", kurs: "Spanska", sprak: "es-ES",
+    begrepp: [
+      { ord: "rojo", def: "röd" },
+      { ord: "azul", def: "blå" },
+      { ord: "verde", def: "grön" },
+      { ord: "amarillo", def: "gul" },
+      { ord: "negro", def: "svart" },
+      { ord: "blanco", def: "vit" },
+      { ord: "uno", def: "ett (1)" },
+      { ord: "dos", def: "två (2)" },
+      { ord: "tres", def: "tre (3)" },
+      { ord: "cuatro", def: "fyra (4)" },
+      { ord: "cinco", def: "fem (5)" },
+      { ord: "seis", def: "sex (6)" },
+      { ord: "siete", def: "sju (7)" },
+      { ord: "ocho", def: "åtta (8)" },
+      { ord: "nueve", def: "nio (9)" },
+      { ord: "diez", def: "tio (10)" },
+      { ord: "once", def: "elva (11)" },
+      { ord: "quince", def: "femton (15)" },
+      { ord: "dieciséis", def: "sexton (16)" },
+      { ord: "veinte", def: "tjugo (20)" }
+    ]
+  },
+  {
+    id: "es-verbos", namn: "Verbos comunes", kurs: "Spanska", sprak: "es-ES",
+    begrepp: [
+      { ord: "ser", def: "att vara (egenskap, vem man är)" },
+      { ord: "estar", def: "att vara (tillstånd, plats)" },
+      { ord: "tener", def: "att ha" },
+      { ord: "hacer", def: "att göra" },
+      { ord: "ir", def: "att gå / åka" },
+      { ord: "hablar", def: "att prata" },
+      { ord: "comer", def: "att äta" },
+      { ord: "beber", def: "att dricka" },
+      { ord: "vivir", def: "att bo / leva" },
+      { ord: "escribir", def: "att skriva" },
+      { ord: "leer", def: "att läsa" },
+      { ord: "escuchar", def: "att lyssna" },
+      { ord: "ver", def: "att se" },
+      { ord: "querer", def: "att vilja" },
+      { ord: "poder", def: "att kunna" },
+      { ord: "saber", def: "att veta" },
+      { ord: "dormir", def: "att sova" },
+      { ord: "jugar", def: "att spela / leka" },
+      { ord: "trabajar", def: "att arbeta" },
+      { ord: "estudiar", def: "att studera" }
     ]
   }
 ];

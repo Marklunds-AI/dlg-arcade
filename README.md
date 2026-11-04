@@ -29,6 +29,15 @@ Nya spel byggs på den gemensamma motorn. Den ger val av bana och nivå, egna ba
 
 Länka direkt till en bana och nivå: `spel/begreppsinvaders.html?bana=salutogent&niva=latt`.
 
+## ¡Habla! – spanska glosor och uttal
+
+`spel/habla.html` tränar spanska glosor med fyra utmaningar som blandas: **Escucha** (lyssna och välj svensk betydelse), **Lee** (läs svenska och välj spanska), **Habla** (säg ordet, taligenkänningen jämför med svaret) och **Escribe** (lyssna och skriv). Var femte runda kommer bossrundan El Toro. Allt ljud kommer från webbläsarens Web Speech API, så det behövs inga ljudfiler eller API-nycklar.
+
+- **Banor:** banorna med `sprak: 'es-ES'` i `banor.js` (kursen Spanska). Bara de banorna visas i ¡Habla!. Egna banor klistras in som `spanska ; svenska`, en glosa per rad.
+- **Direktlänk:** `spel/habla.html?bana=es-comida&niva=latt`.
+- **Taligenkänning** finns i Chrome och Edge. I Chrome skickas talet till Googles taltjänst medan eleven håller in knappen. Saknas taligenkänning (t.ex. Firefox) eller nekas mikrofonen blir Habla självbedömning. Testa det läget med `?mikrofon=av`.
+- **Spansk röst:** spelet väljer en es-ES-röst och tar annars valfri spansk röst. Saknas spansk röst visas en varning på startskärmen.
+
 ## Begreppsslukaren och klassrumsläget
 
 Begreppsslukaren är ett ät-och-väx-spel (som agar.io). Frågan visas stort medan allt står still, sedan dyker svarsbitar upp på kartan. Rätt bit ger tillväxt och superkraft i 6 s, och med superkraft kan man slå loss 15 % av andras massa. Ingen kan åka ut.
@@ -161,7 +170,7 @@ Topplistorna ligger i Supabase och hämtas via REST med den publika anon-nyckeln
 | Nästa ord | `NastaOrdHighscore` |
 | Begreppsracet | `Highscore` |
 | Begrepps-Snake Deluxe | `SnakeHighscore` |
-| Begreppsinvaders, Begreppsslukaren, BF-Rush och alla nya motorspel | `ArcadeScore` (kolumnen `game`) |
+| Begreppsinvaders, Begreppsslukaren, BF-Rush, ¡Habla! och alla nya motorspel | `ArcadeScore` (kolumnen `game`) |
 
 ## Publicering
 

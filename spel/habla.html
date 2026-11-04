@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>¡Habla! – DLG Arcade</title>
+<link rel="icon" href="../assets/img/favicon.svg">
+<style>
+  .hb-wrap{position:absolute;inset:0;overflow:auto;padding:10px 14px 24px;display:flex;flex-direction:column;align-items:center;user-select:text;-webkit-user-select:text}
+  .hb-tid{width:min(680px,100%);height:8px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;margin-bottom:10px;flex:none}
+  .hb-tid i{display:block;height:100%;background:#F7D563;transition:background 200ms}
+  .hb-tid.lag i{background:#ff6b6b}
+  .hb-tid.av{visibility:hidden}
+  .hb-kort{width:min(680px,100%);margin-block:auto;background:#fff;color:#242422;border-radius:8px;padding:18px;box-shadow:0 8px 0 rgba(0,0,0,.2);display:flex;flex-direction:column;gap:14px}
+  .hb-kort.in{animation:hbIn .3s cubic-bezier(.2,0,0,1)}
+  .hb-kort.skak{animation:hbSkak .4s}
+  .hb-topp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .hb-badge{background:#363B68;color:#fff;font-weight:800;border-radius:999px;padding:4px 12px;font-size:14px}
+  .hb-badge.toro{background:#A43033}
+  .hb-uppg{font-size:14px;color:#484F59;font-weight:600}
+  .hb-fraga{font-family:"Inria Serif",Georgia,serif;font-size:clamp(28px,6vw,44px);line-height:1.1;text-align:center;margin:4px 0}
+  .hb-fraga small{display:block;font-family:Inter,Arial,sans-serif;font-size:14px;color:#484F59;margin-bottom:4px}
+  .hb-lyssna{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .hb-knapp{min-height:52px;padding:0 18px;border-radius:8px;border:2px solid #363B68;background:#fff;color:#363B68;font-size:17px;font-weight:700}
+  .hb-knapp:hover{background:#C9E0EE}
+  .hb-knapp.stor{min-height:64px;font-size:20px;padding:0 26px}
+  .hb-knapp.fylld{background:#363B68;color:#fff}
+  .hb-knapp.fylld:hover{background:#4a5090}
+  .hb-knapp.gron{background:#3fa66b;border-color:#3fa66b;color:#fff}
+  .hb-knapp.gul{background:#F7D563;border-color:#d9a400;color:#242422}
+  .hb-alt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hb-alt button{min-height:64px;border:2px solid #C8CACD;background:#fff;border-radius:8px;padding:10px 12px 10px 44px;font-size:18px;font-weight:700;text-align:left;position:relative;color:#242422;transition:transform 120ms,background 120ms}
+  .hb-alt button:hover:not(:disabled){border-color:#363B68;background:#f3f6fb}
+  .hb-alt button:active:not(:disabled){transform:scale(.97)}
+  .hb-alt button .n{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:6px;background:#C9E0EE;font-size:13px;display:grid;place-items:center;color:#242422}
+  .hb-alt button:disabled{cursor:default}
+  .hb-alt button.ratt{background:#3fa66b;border-color:#3fa66b;color:#fff;animation:hbPop .35s}
+  .hb-alt button.fel{background:#A43033;border-color:#A43033;color:#fff;animation:hbSkak .4s}
+  .hb-alt button.tona{opacity:.45}
+  .hb-mikzon{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .hb-mik{width:136px;height:136px;border-radius:50%;border:0;background:#A43033;color:#fff;font-size:52px;box-shadow:0 6px 0 #6e1f22;touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;transition:transform 120ms}
+  .hb-mik.pa{transform:scale(1.07);animation:hbPuls 1s infinite}
+  .hb-mik.vantar{opacity:.6}
+  .hb-status{font-size:15px;color:#484F59;text-align:center;min-height:22px;font-weight:600}
+  .hb-info{background:#C9E0EE;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+  .hb-info p{margin:0;font-size:16px;line-height:1.4}
+  .hb-skriv{display:flex;flex-direction:column;gap:10px}
+  .hb-in{width:100%;font:inherit;font-size:24px;padding:12px 14px;border:2px solid #C8CACD;border-radius:8px;color:#242422}
+  .hb-in:focus{border-color:#363B68;outline:none}
+  .hb-acc{display:flex;flex-wrap:wrap;gap:6px}
+  .hb-acc button{min-width:46px;height:46px;border-radius:8px;border:2px solid #C8CACD;background:#f6f6f6;font-size:20px;font-weight:700;color:#242422}
+  .hb-acc button:hover{border-color:#363B68}
+  .hb-fb{border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;animation:hbPop .35s cubic-bezier(.2,0,0,1)}
+  .hb-fb.gron{background:#E1EFE3;border-left:8px solid #3fa66b}
+  .hb-fb.gul{background:#F8EAA4;border-left:8px solid #d9a400}
+  .hb-fb.rod{background:#F1D9EA;border-left:8px solid #A43033}
+  .hb-fb .rub{font-size:28px;font-weight:900;letter-spacing:-.02em;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+  .hb-fb .rub small{font-size:18px;font-weight:800}
+  .hb-fb p{margin:0;font-size:16px}
+  .hb-facit{font-size:20px}
+  .hb-facit b{font-family:"Inria Serif",Georgia,serif;font-size:26px}
+  mark.hb-m{background:#ffb3b3;color:#A43033;border-radius:3px;padding:0 1px}
+  .hb-rad{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .hb-toro{font-size:72px;text-align:center;line-height:1;animation:hbPop .5s}
+  .hb-toro-t{font-size:clamp(36px,8vw,56px);font-weight:900;text-align:center;letter-spacing:-.04em;color:#A43033;margin:0}
+  .hb-steg{display:flex;gap:6px}
+  .hb-steg i{width:16px;height:16px;border-radius:50%;background:#C8CACD}
+  .hb-steg i.ok{background:#3fa66b}
+  .hb-steg i.nu{background:#F7D563}
+  .hb-notis{gap:6px}
+  .hb-notis p{margin:0;font-size:15px}
+  .hb-notis .varn{color:#A43033;font-weight:700}
+  .hb-ts{display:grid;grid-template-columns:120px 1fr 64px;gap:4px 10px;align-items:center}
+  .hb-ts b{white-space:nowrap;text-align:right}
+  .hb-ts .bar{height:12px;background:#eee;border-radius:99px;overflow:hidden}
+  .hb-ts .bar i{display:block;height:100%;background:#3fa66b}
+  .hb-ts small{grid-column:2 / 4;color:#484F59;font-size:13px;margin-top:-4px}
+  .hb-miss{display:grid;gap:6px;max-height:280px;overflow:auto}
+  .hb-miss div{display:flex;gap:10px;align-items:center;border-left:4px solid #A43033;padding:4px 10px;background:#F1D9EA}
+  .hb-miss button{flex:none;width:44px;height:40px;border-radius:6px;border:0;background:#fff;font-size:18px}
+  .hb-miss span{display:flex;flex-direction:column}
+  @keyframes hbIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes hbPop{0%{transform:scale(.92)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+  @keyframes hbSkak{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  @keyframes hbPuls{0%{box-shadow:0 0 0 0 rgba(164,48,51,.5)}100%{box-shadow:0 0 0 26px rgba(164,48,51,0)}}
+  @media (max-width:520px){
+    .hb-alt{grid-template-columns:1fr}
+    .hb-kort{padding:14px}
+    .hb-wrap{padding:8px 10px 20px}
+    .hb-ts{grid-template-columns:96px 1fr 58px}
+  }
+</style>
+</head>
+<body>
+<script src="../assets/js/banor.js"></script>
+<script src="../assets/js/dlg-spel.js"></script>
+<script>
+/* ¡Habla! – spanska glosor och uttal.
+   Fyra utmaningar: Escucha (lyssna, välj svenska), Lee (läs svenska, välj spanska),
+   Habla (säg ordet, taligenkänning) och Escribe (lyssna, skriv). Var femte runda: El Toro.
+   Allt ljud kommer från Web Speech API. Saknas taligenkänning blir Habla självbedömning.
+   Testa reservläget: habla.html?mikrofon=av */
+
+const RUNDOR = 20;          // en omgång; var femte runda är El Toro
+const TORO_ORD = 5;
+const NIVA = {
+  latt:     { typer: { escucha: 1, lee: 1 }, rate: 0.8, tid: null, liv: 0, poang: 1, hjalp: true },
+  normal:   { typer: { escucha: 1, lee: 1, habla: 1, escribe: 1 }, rate: 1, tid: { escucha: 12, lee: 12, habla: 15, escribe: 25 }, liv: 3, poang: 1.5, hjalp: true },
+  hardcore: { typer: { escucha: 1, lee: 1, habla: 4, escribe: 4 }, rate: 1, tid: { escucha: 7, lee: 7, habla: 10, escribe: 16 }, liv: 3, poang: 2.2, hjalp: false, strikt: true }
+};
+const TYPER = {
+  escucha: { namn: 'Escucha', ikon: '🎧', uppg: 'Lyssna och välj rätt betydelse' },
+  lee:     { namn: 'Lee',     ikon: '📖', uppg: 'Välj rätt ord på spanska' },
+  habla:   { namn: 'Habla',   ikon: '🎤', uppg: 'Säg ordet på spanska' },
+  escribe: { namn: 'Escribe', ikon: '✍️', uppg: 'Lyssna och skriv ordet' }
+};
+const ACCENTER = ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü', '¿', '¡'];
+const SIFFROR = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez',
+  'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte'];
+const ARTIKEL = /^(el|la|los|las|un|una|unos|unas)\s+/;
+const MIK_STOPP = ['not-allowed', 'service-not-allowed', 'audio-capture', 'network', 'language-not-supported', 'start'];
+const { esc, fmt, shuffle, store } = DLGSpel;
+
+/* ---------- uppläsning (speechSynthesis) ---------- */
+const Tal = {
+  finns: 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+  lang: 'es-ES', rost: null, laddad: false, onAndrad: null,
+  init(lang) {
+    this.lang = lang;
+    if (!this.finns) { this.laddad = true; return; }
+    const valj = () => {
+      let v = [];
+      try { v = speechSynthesis.getVoices() || []; } catch (e) {}
+      const L = x => String(x.lang || '').replace('_', '-').toLowerCase();
+      const vill = lang.toLowerCase(), pre = vill.split('-')[0];
+      // hellre en vanlig röst (Mónica, Google, Microsoft) än macOS lekröster som Eddy och Grandpa
+      const bra = x => (/google|microsoft|m[oó]nica|jorge|paulina|marisol|helena|laura|pablo|[aá]lvaro|elvira/i.test(x.name) ? 2 : 0)
+        - (/eddy|flo|grand|reed|rocko|sandy|shelley/i.test(x.name) ? 2 : 0) + (x.localService === false ? 0 : 0.5);
+      const basta = lista => lista.sort((a, b) => bra(b) - bra(a))[0];
+      this.rost = basta(v.filter(x => L(x) === vill)) || basta(v.filter(x => L(x).split('-')[0] === pre)) || null;
+      if (v.length) this.laddad = true;
+      this.onAndrad && this.onAndrad();
+    };
+    valj();
+    try { speechSynthesis.addEventListener('voiceschanged', valj); } catch (e) { speechSynthesis.onvoiceschanged = valj; }
+    // vissa webbläsare skickar aldrig voiceschanged
+    setTimeout(() => { this.laddad = true; valj(); }, 2500);
+  },
+  saga(text, rate = 1) {
+    return new Promise(res => {
+      let klar = false;
+      const fardig = () => { if (!klar) { klar = true; clearTimeout(t); res(); } };
+      const t = setTimeout(fardig, 1500 + String(text).length * 140 / rate);
+      if (!this.finns) return fardig();
+      try {
+        speechSynthesis.cancel();
+        speechSynthesis.resume();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = this.rost ? this.rost.lang : this.lang;
+        if (this.rost) u.voice = this.rost;
+        u.rate = rate;
+        u.onend = fardig; u.onerror = fardig;
+        this.u = u; // annars kan Chrome städa bort den mitt i
+        speechSynthesis.speak(u);
+      } catch (e) { fardig(); }
+    });
+  },
+  tyst() { try { this.finns && speechSynthesis.cancel(); } catch (e) {} }
+};
+
+/* ---------- taligenkänning ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const tvingaAv = /^(av|0|nej|off)$/i.test(new URLSearchParams(location.search).get('mikrofon') || '');
+let talOk = !!SR && !tvingaAv;
+
+// Startar ett försök. Mikrofonen är bara på tills stop()/avbryt() eller tystnad.
+function spelaIn(lang) {
+  let r;
+  try { r = new SR(); } catch (e) { return null; }
+  const alts = []; let fel = null, fardig;
+  const klart = new Promise(res => {
+    let klar = false;
+    fardig = () => { if (!klar) { klar = true; res({ alts, fel }); } };
+  });
+  try {
+    r.lang = lang; r.maxAlternatives = 5; r.interimResults = false; r.continuous = false;
+    r.onresult = e => {
+      for (let i = e.resultIndex; i < e.results.length; i++)
+        for (let j = 0; j < e.results[i].length; j++) { const t = (e.results[i][j].transcript || '').trim(); if (t) alts.push(t); }
+    };
+    r.onerror = e => { fel = e.error || 'fel'; };
+    r.onend = fardig;
+    r.start();
+  } catch (e) { fel = 'start'; fardig(); }
+  return {
+    klart,
+    stop() { try { r.stop(); } catch (e) {} setTimeout(fardig, 7000); },
+    avbryt() { try { r.abort(); } catch (e) {} fardig(); }
+  };
+}
+
+/* ---------- jämförelser ---------- */
+function lev(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let f = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const r = [i];
+    for (let j = 1; j <= n; j++) r[j] = Math.min(f[j] + 1, r[j - 1] + 1, f[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    f = r;
+  }
+  return f[n];
+}
+const utanAccent = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+// gemener, siffror som ord, utan accenter och skiljetecken
+function norm(s) {
+  s = String(s).toLowerCase().replace(/\d+/g, d => SIFFROR[+d] ? ' ' + SIFFROR[+d] + ' ' : d);
+  return utanAccent(s).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// Artikeln får saknas: jämför själva ordet, så att artikeln inte gör likheten högre än uttalet förtjänar.
+const karna = s => { const n = norm(s), u = n.replace(ARTIKEL, ''); return u || n; };
+function likhet(svar, hort) {
+  const a = karna(svar), b = karna(hort), l = Math.max(a.length, b.length);
+  return l ? 1 - lev(a, b) / l : 0;
+}
+// Escribe: 'ratt', 'accent', 'artikel' eller 'fel'. Skiljetecken och versaler räknas inte.
+function kollaSkrivet(svar, skrivet) {
+  const p = s => String(s).normalize('NFC').toLowerCase().replace(/[¿?¡!.,;:]/g, '').replace(/\s+/g, ' ').trim();
+  const a = p(svar), b = p(skrivet);
+  if (a === b) return 'ratt';
+  if (utanAccent(a) === utanAccent(b)) return 'accent';
+  const ua = a.replace(ARTIKEL, '');
+  if (ua !== a && (ua === b || utanAccent(ua) === utanAccent(b))) return 'artikel';
+  return 'fel';
+}
+// Rätt stavning med de bokstäver eleven missade eller skrev fel markerade.
+function markera(svar, skrivet) {
+  const a = [...String(svar).normalize('NFC')], b = [...String(skrivet).normalize('NFC').toLowerCase()];
+  const m = a.length, n = b.length;
+  const d = Array.from({ length: m + 1 }, (_, i) => Array.from({ length: n + 1 }, (_, j) => i ? (j ? 0 : i) : j));
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1].toLowerCase() === b[j - 1] ? 0 : 1));
+  const fel = new Array(m).fill(false);
+  let i = m, j = n;
+  while (i > 0) {
+    if (j > 0 && d[i][j] === d[i - 1][j - 1] + (a[i - 1].toLowerCase() === b[j - 1] ? 0 : 1)) { fel[i - 1] = a[i - 1].toLowerCase() !== b[j - 1]; i--; j--; }
+    else if (d[i][j] === d[i - 1][j] + 1) { fel[i - 1] = true; i--; }
+    else j--;
+  }
+  return a.map((c, k) => fel[k] && !/[¿?¡!.,\s]/.test(c) ? `<mark class="hb-m">${esc(c)}</mark>` : esc(c)).join('');
+}
+// Distraktorer: helst ord som liknar svaret.
+function distraktorer(b, antal) {
+  const mal = norm(b.ord).replace(ARTIKEL, '');
+  const kand = G.pool.filter(x => x.ord !== b.ord && x.def !== b.def)
+    .map(x => ({ x, d: lev(mal, norm(x.ord).replace(ARTIKEL, '')) + Math.random() * 1.5 }))
+    .sort((p, q) => p.d - q.d);
+  const valda = [];
+  for (const { x } of kand.slice(0, antal + 3)) if (!valda.some(v => v.ord === x.ord || v.def === x.def)) valda.push(x);
+  return shuffle(valda).slice(0, antal);
+}
+
+/* ---------- egna banor: "spanska ; svenska" ---------- */
+function tolkaGlosor(text) {
+  return text.split(/\r?\n/).map(r => r.trim()).filter(Boolean).map(r => {
+    const m = r.match(/^(.+?)\s*(?:;|\t|\s[-–—]\s)\s*(.+)$/);
+    return m ? { ord: m[1].trim(), def: m[2].trim() } : null;
+  }).filter(Boolean);
+}
+
+let G = null; // spelets tillstånd
+
+DLGSpel.start({
+  id: 'habla',
+  titel: '¡Habla!',
+  farg: '#7E2A2D',
+  ingress: 'Lyssna, läs, säg och skriv spanska glosor. Träna orden och ditt uttal – och besegra El Toro.',
+  instruktion: [
+    '🎧 Escucha: lyssna på det spanska ordet och välj rätt betydelse.',
+    '📖 Lee: läs det svenska ordet och välj rätt spanskt.',
+    '🎤 Habla: håll in mikrofonknappen (eller mellanslag) och säg ordet. ¡Perfecto! ger dubbla poäng, Casi halva.',
+    '✍️ Escribe: skriv ordet du hör. Rätt utom accenterna ger halva poäng.',
+    'Snabba svar ger mer poäng. Rätt i rad ger kombo ×2, ×3 och ×4. En miss nollställer kombon.',
+    'Var femte runda kommer El Toro 🐂: fem ord i rad. En miss avslutar rundan, klarar du alla fem blir det stor bonus.'
+  ],
+  nivaText: { latt: 'Lyssna och läs, ingen tidsgräns', normal: 'Alla fyra, tidsgräns, tre liv', hardcore: 'Mest tal och skrift, kort tid, varje miss kostar liv' },
+  tangentText: 'Tangentbord: 1–4 väljer, mellanslag = mikrofon, Enter = skicka/nästa. P = paus.',
+  maxPoang: 200000,
+  knappar: [],
+  banFilter: b => /^es/i.test(b.sprak || ''),
+  nyBana: {
+    hjalp: 'En glosa per rad: <b>spanska ; svenska</b> (tab eller " - " fungerar också). Skriv med artikel, t.ex. <b>la manzana ; äpplet</b>. Minst 4 rader.',
+    placeholder: 'la manzana ; äpplet\nel pan ; brödet\nel queso ; osten\nla leche ; mjölken',
+    tolka: tolkaGlosor,
+    extra: { sprak: 'es-ES' }
+  },
+  onStart: ritaNotis,
+  starta: startaSpel,
+  onPaus(p) { if (p && G) { Tal.tyst(); avbrytInspelning(); } },
+  onSlut() { if (G) { G.slut = true; clearTimeout(G.auto); Tal.tyst(); avbrytInspelning(); } },
+  resultat
+});
+Tal.init('es-ES');
+
+/* ---------- startskärmens info om röst och mikrofon ---------- */
+function ritaNotis(o) {
+  let el = o && o.querySelector('#hb-notis');
+  if (o && !el) {
+    el = document.createElement('div');
+    el.className = 'dlg-box hb-notis'; el.id = 'hb-notis';
+    const lead = o.querySelector('.dlg-lead');
+    lead ? lead.after(el) : o.querySelector('.dlg-panel').prepend(el);
+  }
+  el = el || document.getElementById('hb-notis');
+  if (!el) return;
+  const rost = !Tal.finns ? '<p class="varn">⚠️ Webbläsaren kan inte läsa upp text. Escucha och Escribe visas som text i stället.</p>'
+    : !Tal.laddad ? '<p>🔊 Letar efter en spansk röst…</p>'
+    : !Tal.rost ? '<p class="varn">⚠️ Ingen spansk röst hittades på den här enheten, så uppläsningen kan låta fel. Prova Chrome eller Edge, eller installera en spansk röst i enhetens inställningar för tal.</p>'
+    : `<p>🔊 Spansk röst: ${esc(Tal.rost.name)} (${esc(Tal.rost.lang)})</p>`;
+  const mik = talOk ? '<p>🎤 Habla använder mikrofonen och taligenkänning.</p>'
+    : '<p>🎤 Taligenkänning finns inte här' + (tvingaAv ? ' (avstängd)' : ' (fungerar bäst i Chrome och Edge)') + '. I Habla säger du ordet högt och bedömer dig själv.</p>';
+  el.innerHTML = rost + mik;
+}
+Tal.onAndrad = () => ritaNotis(null);
+
+/* ---------- spelet ---------- */
+function startaSpel(ctx) {
+  const N = NIVA[ctx.niva];
+  if (ctx.bana.sprak && ctx.bana.sprak !== Tal.lang) Tal.init(ctx.bana.sprak);
+  ctx.stage.innerHTML = '<div class="hb-wrap"><div class="hb-tid av"><i></i></div><div class="hb-kort" id="hb-kort"></div></div>';
+  const pool = [];
+  (ctx.bana.pool || ctx.bana.begrepp).forEach(b => { if (!pool.some(x => x.ord === b.ord)) pool.push(b); });
+  G = {
+    ctx, N, pool, lang: ctx.bana.sprak || 'es-ES', ovning: !!ctx.bana.ovning,
+    rundor: ctx.bana.ovning ? Math.min(RUNDOR, Math.max(8, ctx.bana.begrepp.length * 2)) : RUNDOR,
+    kort: ctx.stage.querySelector('#hb-kort'), tidEl: ctx.stage.querySelector('.hb-tid'),
+    poang: 0, liv: N.liv, runda: 0, svit: 0, basta: 0,
+    lage: 'start', qid: 0, recId: 0, rec: null, spelarIn: false, vantar: false,
+    klocka: false, aktiv: 0, tidMax: 0, tick: 0,
+    boss: null, klar: false, slut: false,
+    stat: Object.fromEntries(Object.keys(TYPER).map(t => [t, { forsok: 0, ratt: 0, nastan: 0 }])),
+    missade: new Map()
+  };
+  const g = G;
+  let last = performance.now();
+  (function loop(now) {
+    if (g.slut || g !== G) return;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (!DLGSpel.pausad && g.lage === 'fraga' && g.klocka && !g.spelarIn && !g.vantar) {
+      g.aktiv += dt;
+      if (g.tidMax) {
+        const kvar = Math.max(0, g.tidMax - g.aktiv);
+        g.tidEl.firstChild.style.width = (100 * kvar / g.tidMax) + '%';
+        g.tidEl.classList.toggle('lag', kvar < 3);
+        if (kvar < 3 && Math.ceil(kvar) !== g.tick) { g.tick = Math.ceil(kvar); if (g.tick > 0) DLGSpel.ljud('poang'); }
+        if (kvar <= 0) avgor('tid');
+      }
+    }
+    requestAnimationFrame(loop);
+  })(last);
+  uppdateraHud();
+  nastaRunda();
+}
+
+const kombo = () => G.svit >= 10 ? 4 : G.svit >= 6 ? 3 : G.svit >= 3 ? 2 : 1;
+
+function uppdateraHud() {
+  G.ctx.hud('runda', 'Runda', `${Math.max(1, G.runda)}/${G.rundor}`);
+  G.ctx.hud('liv', 'Liv', G.N.liv ? ('♥'.repeat(Math.max(0, G.liv)) || '–') : '∞');
+  G.ctx.hud('kombo', 'Kombo', '×' + kombo());
+}
+
+function valjTyp() {
+  const t = Object.entries(G.N.typer), sum = t.reduce((s, [, v]) => s + v, 0);
+  let r = Math.random() * sum;
+  for (const [k, v] of t) { r -= v; if (r <= 0) return k; }
+  return t[0][0];
+}
+const nastaOrd = () => G.ctx.fragor.nasta(1).begrepp;
+
+function nastaRunda() {
+  if (G.slut) return;
+  G.runda++;
+  if (G.runda > G.rundor) { G.klar = true; return G.ctx.slut(G.poang); }
+  uppdateraHud();
+  if (!G.ovning && G.runda % 5 === 0) return visaToro();
+  stall(valjTyp(), nastaOrd());
+}
+
+/* ---------- El Toro ---------- */
+function toroTyp() {
+  if (!G.N.typer.habla) return Tal.finns ? 'escucha' : 'lee';
+  return talOk ? 'habla' : Tal.finns ? 'escribe' : 'lee';
+}
+function visaToro() {
+  const ord = [];
+  for (let f = 0; ord.length < TORO_ORD && f < 40; f++) { const b = nastaOrd(); if (!ord.includes(b) || f > 30) ord.push(b); }
+  G.boss = { ord, steg: 0, typ: toroTyp(), fail: false };
+  G.lage = 'toro'; G.qid++;
+  G.tidEl.classList.add('av');
+  const vad = G.boss.typ === 'habla' ? 'Säg fem ord i rad' : G.boss.typ === 'escribe' ? 'Skriv fem ord i rad' : 'Klara fem ord i rad';
+  G.kort.className = 'hb-kort in';
+  G.kort.innerHTML = `
+    <div class="hb-toro">🐂</div>
+    <h2 class="hb-toro-t">¡El Toro!</h2>
+    <p class="hb-fraga" style="font-size:22px">${vad}. En miss avslutar rundan.<br>Klarar du alla fem väntar en stor bonus.</p>
+    <div class="hb-lyssna"><button class="hb-knapp stor fylld" id="hb-vamos">¡Vamos! ▶</button></div>`;
+  G.kort.querySelector('#hb-vamos').onclick = startaToro;
+  G.kort.querySelector('#hb-vamos').focus({ preventScroll: true });
+  DLGSpel.ljud('niva');
+}
+function startaToro() {
+  if (G.lage !== 'toro') return;
+  stall(G.boss.typ, G.boss.ord[0]);
+}
+
+/* ---------- en fråga ---------- */
+function stall(typ, b) {
+  clearTimeout(G.auto);
+  avbrytInspelning();
+  Tal.tyst();
+  const N = G.N, qid = ++G.qid;
+  Object.assign(G, { typ, b, lage: 'fraga', klocka: false, aktiv: 0, tick: 0, sjalv: typ === 'habla' && !talOk, facit: false, alt: null, horde: '' });
+  G.tidMax = N.tid ? N.tid[typ] : 0;
+  G.tidEl.classList.toggle('av', !G.tidMax);
+  G.tidEl.classList.remove('lag');
+  G.tidEl.firstChild.style.width = '100%';
+
+  const t = TYPER[typ];
+  const toro = G.boss ? `<span class="hb-badge toro">🐂 El Toro</span><span class="hb-steg">${G.boss.ord.map((_, i) => `<i class="${i < G.boss.steg ? 'ok' : i === G.boss.steg ? 'nu' : ''}"></i>`).join('')}</span>` : '';
+  let html = `<div class="hb-topp">${toro}<span class="hb-badge">${t.ikon} ${t.namn}</span><span class="hb-uppg">${G.sjalv ? 'Säg ordet högt och bedöm dig själv' : t.uppg}</span></div>`;
+  const lyssnaKnappar = `<div class="hb-lyssna"><button class="hb-knapp" data-spela="1">🔊 Lyssna igen</button><button class="hb-knapp" data-spela="0.7">🐢 Långsamt</button></div>`;
+
+  if (typ === 'escucha' || typ === 'lee') {
+    const andra = distraktorer(b, 3);
+    G.alt = shuffle([b, ...andra]).map(x => ({ x, ratt: x === b, text: typ === 'escucha' ? x.def : x.ord }));
+    if (typ === 'escucha') html += Tal.finns ? `<div class="hb-fraga"><small>Vad betyder ordet du hör?</small>🎧</div>${lyssnaKnappar}`
+      : `<div class="hb-fraga"><small>Vad betyder…</small>${esc(b.ord)}</div>`;
+    else html += `<div class="hb-fraga"><small>Vad heter det på spanska?</small>${esc(b.def)}</div>`;
+    html += `<div class="hb-alt">${G.alt.map((a, i) => `<button data-i="${i}"><span class="n">${i + 1}</span>${esc(a.text)}</button>`).join('')}</div>`;
+  } else if (typ === 'habla') {
+    html += `<div class="hb-fraga"><small>Säg på spanska:</small>${esc(b.def)}</div>`;
+    html += G.sjalv ? sjalvHtml() : mikInfoOk() ? mikHtml() : infoHtml();
+  } else {
+    const hjalp = !Tal.finns ? `<div class="hb-fraga"><small>Skriv på spanska:</small>${esc(b.def)}</div>`
+      : `<div class="hb-fraga"><small>Skriv ordet du hör</small>✍️</div>${lyssnaKnappar}${N.hjalp ? `<p class="hb-status">Betyder: ${esc(b.def)}</p>` : ''}`;
+    html += `${hjalp}<div class="hb-skriv">
+      <input class="hb-in" id="hb-in" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" lang="es" aria-label="Skriv ordet på spanska">
+      <div class="hb-acc">${ACCENTER.map(c => `<button data-acc="${c}" aria-label="Skriv ${c}">${c}</button>`).join('')}</div>
+      <button class="hb-knapp stor fylld" id="hb-skicka">Skicka ⏎</button></div>`;
+  }
+  G.kort.className = 'hb-kort';
+  void G.kort.offsetWidth;
+  G.kort.className = 'hb-kort in';
+  G.kort.innerHTML = html;
+  bindFraga();
+
+  // klockan startar när uppläsningen är klar
+  if ((typ === 'escucha' || typ === 'escribe') && Tal.finns) {
+    Tal.saga(b.ord, N.rate).then(() => { if (qid === G.qid && G.lage === 'fraga') G.klocka = true; });
+  } else if (typ !== 'habla' || G.sjalv || mikInfoOk()) G.klocka = true;
+  if (typ === 'escribe') setTimeout(() => { const i = document.getElementById('hb-in'); i && i.focus({ preventScroll: true }); }, 50);
+  else if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+
+const mikInfoOk = () => store.get('dlg_habla_mikinfo', false);
+const mikHtml = () => `<div class="hb-mikzon"><button class="hb-mik" id="hb-mik" aria-label="Håll in och prata">🎤</button><div class="hb-status" id="hb-status">Håll in knappen (eller mellanslag) och säg ordet</div></div>`;
+const infoHtml = () => `<div class="hb-info"><p>🎤 Mikrofonen används bara medan du håller in knappen. Inget sparas. I Chrome tolkas talet av Googles taltjänst.</p><button class="hb-knapp fylld" id="hb-infook">Jag förstår ▶</button></div>`;
+const sjalvHtml = () => `<div class="hb-mikzon" id="hb-sjalv"><div class="hb-status">Säg ordet högt på spanska. Tryck sedan på Visa facit.</div><button class="hb-knapp stor fylld" id="hb-facitknapp">Visa facit 🔊</button></div>`;
+
+function bindFraga() {
+  const k = G.kort;
+  k.querySelectorAll('[data-spela]').forEach(btn => btn.onclick = () => { if (!G.spelarIn) Tal.saga(G.b.ord, G.N.rate * Number(btn.dataset.spela)); });
+  k.querySelectorAll('[data-i]').forEach(btn => btn.onclick = () => valjAlt(+btn.dataset.i));
+  const ok = k.querySelector('#hb-infook');
+  if (ok) ok.onclick = kvitteraInfo;
+  bindMik();
+  const fk = k.querySelector('#hb-facitknapp');
+  if (fk) fk.onclick = visaFacit;
+  const inp = k.querySelector('#hb-in');
+  if (inp) {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); skickaSkrivet(); } });
+    k.querySelector('#hb-skicka').onclick = skickaSkrivet;
+    k.querySelectorAll('[data-acc]').forEach(btn => {
+      btn.addEventListener('mousedown', e => e.preventDefault()); // behåll fokus i rutan
+      btn.onclick = () => {
+        const s = inp.selectionStart ?? inp.value.length, e = inp.selectionEnd ?? s;
+        inp.setRangeText(btn.dataset.acc, s, e, 'end');
+        inp.focus({ preventScroll: true });
+      };
+    });
+  }
+}
+
+function bindMik() {
+  const mik = G.kort.querySelector('#hb-mik');
+  if (!mik) return;
+  mik.addEventListener('pointerdown', e => { e.preventDefault(); try { mik.setPointerCapture(e.pointerId); } catch (x) {} mikNed(); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => mik.addEventListener(t, () => mikUpp()));
+  mik.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+function kvitteraInfo() {
+  store.set('dlg_habla_mikinfo', true);
+  if (G.lage !== 'fraga' || G.typ !== 'habla') return;
+  const info = G.kort.querySelector('.hb-info');
+  if (info) { info.outerHTML = mikHtml(); bindMik(); }
+  G.klocka = true;
+}
+
+/* --- flerval --- */
+function valjAlt(i) {
+  if (G.lage !== 'fraga' || !G.alt || !G.alt[i]) return;
+  const a = G.alt[i];
+  G.kort.querySelectorAll('[data-i]').forEach((btn, j) => {
+    btn.disabled = true;
+    if (G.alt[j].ratt) btn.classList.add('ratt');
+    else if (j === i) btn.classList.add('fel');
+    else btn.classList.add('tona');
+  });
+  avgor(a.ratt ? 'ratt' : 'fel', { valt: a.text });
+}
+
+/* --- Escribe --- */
+function skickaSkrivet() {
+  if (G.lage !== 'fraga' || G.typ !== 'escribe') return;
+  const inp = document.getElementById('hb-in');
+  const v = inp ? inp.value.trim() : '';
+  if (!v) { inp && inp.focus(); return; }
+  const r = kollaSkrivet(G.b.ord, v);
+  inp.disabled = true;
+  avgor(r === 'ratt' ? 'ratt' : r === 'fel' ? 'fel' : 'nastan', { skrivet: v, orsak: r });
+}
+
+/* --- Habla med mikrofon --- */
+function mikNed() {
+  if (!G || G.lage !== 'fraga' || G.typ !== 'habla' || G.sjalv || G.rec || G.vantar || DLGSpel.pausad) return;
+  if (!mikInfoOk()) return;
+  Tal.tyst();
+  const rec = spelaIn(G.lang);
+  if (!rec) return tillSjalvbedomning();
+  const rid = ++G.recId;
+  G.rec = rec; G.spelarIn = true;
+  mikUi('pa', 'Lyssnar… släpp när du har sagt ordet');
+  clearTimeout(G.recMax);
+  G.recMax = setTimeout(mikUpp, 7000);
+  rec.klart.then(r => {
+    if (!G || rid !== G.recId || G.slut) return;
+    clearTimeout(G.recMax);
+    G.rec = null; G.spelarIn = false; G.vantar = false;
+    hanteraHort(r);
+  });
+}
+function mikUpp() {
+  if (!G || !G.rec || !G.spelarIn) return;
+  G.spelarIn = false; G.vantar = true;
+  mikUi('vantar', 'Tolkar…');
+  G.rec.stop();
+}
+function avbrytInspelning() {
+  if (!G) return;
+  clearTimeout(G.recMax);
+  G.recId++;
+  if (G.rec) G.rec.avbryt();
+  G.rec = null; G.spelarIn = false; G.vantar = false;
+  mikUi('', 'Håll in knappen (eller mellanslag) och säg ordet');
+}
+function mikUi(klass, text) {
+  const m = G && G.kort && G.kort.querySelector('#hb-mik'), s = G && G.kort && G.kort.querySelector('#hb-status');
+  if (m) m.className = 'hb-mik' + (klass ? ' ' + klass : '');
+  if (s) s.textContent = text;
+}
+function hanteraHort({ alts, fel }) {
+  if (G.lage !== 'fraga') return;
+  if (fel && MIK_STOPP.includes(fel)) return tillSjalvbedomning(fel === 'network' ? 'Taltjänsten svarar inte.' : 'Mikrofonen kunde inte användas.');
+  if (!alts.length) { mikUi('', 'Jag hörde ingenting. Håll in knappen medan du pratar (och tillåt mikrofonen om webbläsaren frågar).'); return; }
+  let bast = { t: alts[0], l: -1 };
+  alts.forEach(t => { const l = likhet(G.b.ord, t); if (l > bast.l) bast = { t, l }; });
+  avgor(bast.l >= 0.9 ? 'perfekt' : bast.l >= 0.7 ? 'nastan' : 'fel', { hort: bast.t, likhet: bast.l });
+}
+
+/* --- Habla utan taligenkänning: självbedömning --- */
+function tillSjalvbedomning(orsak) {
+  talOk = false;
+  if (G.boss && G.boss.typ === 'habla') G.boss.typ = toroTyp();
+  if (orsak) G.ctx.toast('Du bedömer själv', '#F8EAA4');
+  if (G.lage !== 'fraga') return;
+  if (G.boss) return stall(G.boss.typ, G.b);
+  stall('habla', G.b);
+  const s = G.kort.querySelector('#hb-sjalv .hb-status');
+  if (s && orsak) s.textContent = orsak + ' Säg ordet högt på spanska och tryck sedan på Visa facit.';
+}
+function visaFacit() {
+  if (G.lage !== 'fraga' || !G.sjalv || G.facit) return;
+  G.facit = true; G.klocka = false;
+  const z = G.kort.querySelector('#hb-sjalv');
+  z.innerHTML = `<div class="hb-facit" style="text-align:center"><b>${esc(G.b.ord)}</b></div>
+    <div class="hb-lyssna"><button class="hb-knapp" data-spela="1">🔊 Igen</button><button class="hb-knapp" data-spela="0.7">🐢 Långsamt</button></div>
+    <div class="hb-status">Lät det som du sa?</div>
+    <div class="hb-lyssna"><button class="hb-knapp stor gron" id="hb-sjratt">✔ Rätt <small>(1)</small></button><button class="hb-knapp stor gul" id="hb-sjnast">≈ Nästan <small>(2)</small></button></div>`;
+  z.querySelectorAll('[data-spela]').forEach(btn => btn.onclick = () => Tal.saga(G.b.ord, G.N.rate * Number(btn.dataset.spela)));
+  z.querySelector('#hb-sjratt').onclick = () => avgor('ratt', { sjalv: true });
+  z.querySelector('#hb-sjnast').onclick = () => avgor('nastan', { sjalv: true });
+  Tal.saga(G.b.ord, G.N.rate);
+}
+
+/* ---------- avgörande, poäng och feedback ---------- */
+function avgor(res, info = {}) {
+  if (!G || G.lage !== 'fraga') return;
+  G.lage = 'svar'; G.klocka = false;
+  avbrytInspelning();
+  const { b, typ, N } = G;
+  const ok = res === 'perfekt' || res === 'ratt', nastan = res === 'nastan';
+  const st = G.stat[typ];
+  st.forsok++; if (ok) st.ratt++; else if (nastan) st.nastan++;
+  if (res === 'tid' && G.alt) G.kort.querySelectorAll('[data-i]').forEach((btn, j) => { btn.disabled = true; btn.classList.add(G.alt[j].ratt ? 'ratt' : 'tona'); });
+  const inp = document.getElementById('hb-in'); if (inp) inp.disabled = true;
+
+  // motorns viktning: missade ord kommer oftare
+  const x = G.ctx.fragor.lista.find(y => y.ord === b.ord);
+  if (x) {
+    G.ctx.fragor.svara(x, ok || nastan);
+    if (nastan) x.vikt = Math.min(6, x.vikt + 1.5);
+  }
+  if (!ok) { const m = G.missade.get(b.ord) || { b, typer: new Set() }; m.typer.add(typ); G.missade.set(b.ord, m); }
+
+  let p = 0;
+  const forre = kombo();
+  if (ok || nastan) {
+    const fart = G.tidMax ? Math.max(0, 1 - G.aktiv / G.tidMax) : Math.max(0, 1 - G.aktiv / 12);
+    p = (100 + Math.round(100 * fart)) * forre * N.poang;
+    if (res === 'perfekt') p *= 2;
+    if (nastan) p *= 0.5;
+    p = Math.round(p);
+    G.poang += p; G.ctx.setPoang(G.poang);
+  }
+  if (ok) { G.svit++; G.basta = Math.max(G.basta, G.svit); }
+  else if (!nastan) G.svit = 0;
+  if (kombo() > forre) G.ctx.toast('Kombo ×' + kombo() + '!');
+
+  const miss = res === 'fel' || res === 'tid';
+  const kostarLiv = N.liv && !info.sjalv && (G.boss ? N.strikt && (miss || nastan) : miss || (nastan && N.strikt));
+  if (kostarLiv) G.liv--;
+  if (G.boss && miss) G.boss.fail = true;
+
+  DLGSpel.ljud(ok ? 'ratt' : nastan ? 'poang' : 'fel');
+  if (!ok && !nastan) { G.kort.classList.remove('in', 'skak'); void G.kort.offsetWidth; G.kort.classList.add('skak'); }
+  uppdateraHud();
+  visaFeedback(res, info, p, kostarLiv);
+}
+
+function visaFeedback(res, info, p, kostarLiv) {
+  const { b, typ, N } = G;
+  const ok = res === 'perfekt' || res === 'ratt';
+  const farg = ok ? 'gron' : res === 'nastan' ? 'gul' : 'rod';
+  const rubrik = res === 'perfekt' ? '¡Perfecto!' : res === 'ratt' ? '¡Correcto!' : res === 'nastan' ? 'Casi' : res === 'tid' ? '¡Se acabó el tiempo!' : '¡Ay, no!';
+  const delar = [];
+  if (info.hort !== undefined) delar.push(`<p>Jag hörde: <b>”${esc(info.hort)}”</b>${res === 'perfekt' ? ' – dubbla poäng!' : ''}</p>`);
+  if (info.skrivet !== undefined && !ok) {
+    const varfor = info.orsak === 'accent' ? 'Nästan! Kolla accenterna.' : info.orsak === 'artikel' ? 'Nästan! Glöm inte artikeln.' : '';
+    delar.push(`<p>Du skrev: <b>${esc(info.skrivet)}</b>${varfor ? ' · ' + varfor : ''}</p>`);
+  }
+  if (info.valt !== undefined && !ok) delar.push(`<p>Du valde: <b>${esc(info.valt)}</b></p>`);
+  if (G.boss && G.boss.fail) delar.push('<p>🐂 El Toro vann den här gången. Rundan är slut.</p>');
+  const facit = info.skrivet !== undefined && !ok ? markera(b.ord, info.skrivet) : esc(b.ord);
+  const sista = (G.N.liv && G.liv <= 0);
+  const behoverKnapp = !ok || typ === 'habla' || sista || (G.boss && G.boss.fail);
+  const fb = document.createElement('div');
+  fb.className = 'hb-fb ' + farg;
+  fb.innerHTML = `
+    <div class="rub"><span>${rubrik}</span><small>${p ? '+' + fmt(p) : ''}${kostarLiv ? ' −1 ♥' : ''}</small></div>
+    ${delar.join('')}
+    <div class="hb-facit"><b>${facit}</b> = ${esc(b.def)}</div>
+    <div class="hb-rad"><button class="hb-knapp" data-spela="1">🔊 Normal</button><button class="hb-knapp" data-spela="0.7">🐢 Långsamt</button>
+      ${behoverKnapp ? `<button class="hb-knapp fylld" id="hb-nasta" style="margin-left:auto">${sista ? 'Se resultat' : 'Nästa'} ▶</button>` : ''}</div>`;
+  // ersätt inmatningen med feedback, behåll frågan och alternativen
+  const zon = G.kort.querySelector('.hb-mikzon, .hb-skriv, .hb-info');
+  if (zon) zon.replaceWith(fb); else G.kort.appendChild(fb);
+  G.kort.querySelectorAll('.hb-lyssna').forEach(l => { if (!fb.contains(l)) l.remove(); });
+  const tips = G.kort.querySelector('.hb-status'); if (tips && !fb.contains(tips)) tips.remove();
+  fb.querySelectorAll('[data-spela]').forEach(btn => btn.onclick = () => Tal.saga(b.ord, N.rate * Number(btn.dataset.spela)));
+  const nb = fb.querySelector('#hb-nasta');
+  if (nb) { nb.onclick = nasta; nb.focus({ preventScroll: true }); }
+  fb.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+  // spela upp rätt uttal (inte när man nyss lyssnat och svarat rätt)
+  const spela = !(ok && (typ === 'escucha' || info.sjalv));
+  const efter = spela ? Tal.saga(b.ord, N.rate) : Promise.resolve();
+  if (!behoverKnapp) {
+    const qid = G.qid;
+    efter.then(() => { if (G.qid === qid && G.lage === 'svar') G.auto = setTimeout(nasta, 700); });
+  }
+}
+
+function nasta() {
+  if (!G || G.lage !== 'svar' || G.slut) return;
+  clearTimeout(G.auto);
+  if (G.N.liv && G.liv <= 0) { G.lage = 'slut'; return G.ctx.slut(G.poang); }
+  if (G.boss) {
+    if (G.boss.fail) { G.boss = null; return nastaRunda(); }
+    G.boss.steg++;
+    if (G.boss.steg < G.boss.ord.length) return stall(G.boss.typ, G.boss.ord[G.boss.steg]);
+    const bonus = Math.round(2500 * G.N.poang * kombo());
+    G.poang += bonus; G.ctx.setPoang(G.poang);
+    G.boss = null; G.lage = 'olé';
+    G.ctx.toast('¡Olé! +' + fmt(bonus));
+    DLGSpel.ljud('niva');
+    G.kort.innerHTML = `<div class="hb-toro">🏆</div><h2 class="hb-toro-t">¡Olé!</h2><p class="hb-fraga" style="font-size:22px">Du besegrade El Toro. Bonus +${fmt(bonus)}</p>`;
+    G.auto = setTimeout(() => { if (!G.slut) nastaRunda(); }, 1600);
+    return;
+  }
+  nastaRunda();
+}
+
+/* ---------- tangentbord ---------- */
+addEventListener('keydown', e => {
+  if (!G || G.slut || !DLGSpel.spelar || DLGSpel.pausad) return;
+  const iRuta = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+  if (iRuta) return; // rutan sköter Enter själv
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (e.repeat) return;
+    if (G.lage === 'fraga' && G.typ === 'habla' && !G.sjalv) mikInfoOk() ? mikNed() : kvitteraInfo();
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (e.repeat) return;
+    if (G.lage === 'svar') nasta();
+    else if (G.lage === 'toro') startaToro();
+    else if (G.lage === 'fraga') {
+      if (G.typ === 'habla' && !G.sjalv && !mikInfoOk()) kvitteraInfo();
+      else if (G.sjalv && !G.facit) visaFacit();
+      else if (G.typ === 'escribe') skickaSkrivet();
+    }
+    return;
+  }
+  const m = /^(?:Digit|Numpad)([1-4])$/.exec(e.code);
+  if (m && G.lage === 'fraga') {
+    e.preventDefault();
+    const i = +m[1] - 1;
+    if (G.alt) valjAlt(i);
+    else if (G.sjalv && G.facit && i < 2) avgor(i === 0 ? 'ratt' : 'nastan', { sjalv: true });
+  }
+});
+addEventListener('keyup', e => { if (e.code === 'Space' && G && G.spelarIn) mikUpp(); });
+
+/* ---------- resultatskärmen ---------- */
+function resultat() {
+  if (!G) return {};
+  const rader = Object.keys(TYPER).filter(t => G.stat[t].forsok).map(t => {
+    const s = G.stat[t], pct = Math.round(100 * (s.ratt + s.nastan * 0.5) / s.forsok);
+    return `<div class="hb-ts"><span>${TYPER[t].ikon} ${TYPER[t].namn}</span><div class="bar"><i style="width:${pct}%"></i></div><b>${pct} %</b>
+      <small>${s.ratt} rätt${s.nastan ? `, ${s.nastan} nästan` : ''} av ${s.forsok}</small></div>`;
+  }).join('');
+  const miss = [...G.missade.values()];
+  const html = (rader ? `<div class="dlg-box"><h2>Träffprocent per utmaning</h2>${rader}</div>` : '')
+    + (miss.length ? `<div class="dlg-box"><h2>Ord att öva på</h2>
+        <div class="hb-miss">${miss.map((m, i) => `<div><button data-ms="${i}" aria-label="Lyssna på ${esc(m.b.ord)}">🔊</button><span><b>${esc(m.b.ord)}</b>${esc(m.b.def)}</span></div>`).join('')}</div>
+        <div class="dlg-row"><button class="dlg-btn small dark" id="hb-ova">Öva bara dessa (${miss.length}) ▶</button></div></div>`
+      : rader ? '<div class="dlg-box"><h2>Inga missar – ¡fantástico!</h2></div>' : '');
+  const bana = G.ctx.bana, pool = G.pool, rate = G.N.rate;
+  return {
+    rubrik: G.klar ? '¡Olé!' : 'Fin del juego',
+    html, doljMissade: true,
+    efter(o) {
+      o.querySelectorAll('[data-ms]').forEach(btn => btn.onclick = () => Tal.saga(miss[+btn.dataset.ms].b.ord, rate));
+      const ova = o.querySelector('#hb-ova');
+      if (ova) ova.onclick = () => DLGSpel.spela({
+        id: bana.id, namn: bana.namn.replace(/ · övning$/, '') + ' · övning', kurs: bana.kurs, sprak: bana.sprak,
+        ovning: true, pool, begrepp: miss.map(m => ({ ord: m.b.ord, def: m.b.def }))
+      });
+    }
+  };
+}
+</script>
+</body>
+</html>

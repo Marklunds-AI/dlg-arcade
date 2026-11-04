@@ -17,6 +17,13 @@
 
    Valfritt:
      startKnappar: [{ text, klick }]       // extra knappar bredvid "Spela" på startskärmen
+     banFilter: b => !!b.sprak             // visa bara vissa banor (valet sparas då per spel)
+     nyBana: { hjalp, placeholder, tolka(text), extra }   // egen inmatning av egna banor, extra = fält på banan
+     tangentText: '...'                    // raden om tangentbordet på startskärmen
+     onStart(overlay)                      // körs när startskärmen har ritats
+     ctx.slut(poang, { rubrik, html, efter(overlay), doljMissade })   // eget innehåll på resultatskärmen
+     resultat() => ({ rubrik, html, ... })  // samma sak, men gäller även när rundan avslutas från pausmenyn
+     DLGSpel.spela(bana)                   // starta med en tillfällig bana; ovning: true = ingen topplista
      DLGSpel.startaExtern() / avslutaExtern()   // spelet styr själv (t.ex. klassrum): ingen paus, ingen topplista
      DLGSpel.skapaFragor(bana), allaBanor(), banaById(id), stil()   // för sidor som inte kör start()
 */
@@ -52,7 +59,7 @@
 
   /* ---------- banor ---------- */
   const EGNA_KEY = 'dlg_egna_banor';
-  const allaBanor = () => [...(window.DLG_BANOR || []), ...store.get(EGNA_KEY, [])];
+  const allaBanor = () => [...(window.DLG_BANOR || []), ...store.get(EGNA_KEY, [])].filter(b => !DLGSpel.cfg || !DLGSpel.cfg.banFilter || DLGSpel.cfg.banFilter(b));
   const banaById = id => allaBanor().find(b => b.id === id);
 
   // Tolkar inklistrad text: en rad per begrepp, "ord - definition", "ord: definition" eller tab.
@@ -271,8 +278,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
       // förval från adressen: ?bana=salutogent&niva=normal
       const q = new URLSearchParams(location.search);
-      this.valdBana = (q.get('bana') && banaById(q.get('bana'))) ? q.get('bana') : store.get('dlg_bana', (window.DLG_BANOR || [{}])[0].id);
-      if (!banaById(this.valdBana)) this.valdBana = (window.DLG_BANOR || [{}])[0].id;
+      this.banKey = cfg.banFilter ? 'dlg_bana_' + cfg.id : 'dlg_bana';
+      const forsta = (allaBanor()[0] || {}).id;
+      this.valdBana = (q.get('bana') && banaById(q.get('bana'))) ? q.get('bana') : store.get(this.banKey, forsta);
+      if (!banaById(this.valdBana)) this.valdBana = forsta;
       this.valdNiva = NIVAER[q.get('niva')] ? q.get('niva') : store.get('dlg_niva', 'normal');
       if (!NIVAER[this.valdNiva]) this.valdNiva = 'normal';
 
@@ -321,7 +330,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <div class="dlg-niva" id="dlg-niva">${Object.values(NIVAER).map(n =>
             `<button class="dlg-chip" data-n="${n.id}" aria-pressed="${n.id === this.valdNiva}"><span>${n.ikon} ${n.namn}</span><small>${esc((cfg.nivaText || {})[n.id] || n.text)}</small></button>`).join('')}</div>
         </div>
-        <div class="dlg-row"><button class="dlg-btn" id="dlg-spela">Spela ▶</button>${cfg.startKnappar.map((k, i) => `<button class="dlg-btn ghost" data-sk="${i}">${esc(k.text)}</button>`).join('')}<span class="dlg-small" style="color:var(--sky)">Tangentbord: piltangenter + mellanslag. P = paus.</span></div>
+        <div class="dlg-row"><button class="dlg-btn" id="dlg-spela">Spela ▶</button>${cfg.startKnappar.map((k, i) => `<button class="dlg-btn ghost" data-sk="${i}">${esc(k.text)}</button>`).join('')}<span class="dlg-small" style="color:var(--sky)">${esc(cfg.tangentText || 'Tangentbord: piltangenter + mellanslag. P = paus.')}</span></div>
         ${cfg.instruktion.length ? `<div class="dlg-box"><h2>Så spelar du</h2><ol>${cfg.instruktion.map(r => `<li>${esc(r)}</li>`).join('')}</ol></div>` : ''}`);
       this.ritaBanor();
       o.querySelector('#dlg-ny').onclick = () => this.visaNyBana();
@@ -332,6 +341,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       o.querySelector('#dlg-spela').onclick = () => this.spela();
       o.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => cfg.startKnappar[b.dataset.sk].klick());
       o.querySelector('#dlg-spela').focus({ preventScroll: true });
+      cfg.onStart && cfg.onStart(o);
     },
 
     ritaBanor() {
@@ -342,42 +352,43 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <div class="dlg-kurs">${esc(kurs)}</div>
         <div class="dlg-chips">${banor.map(b => `<button class="dlg-chip" data-b="${esc(b.id)}" aria-pressed="${b.id === this.valdBana}">${esc(b.namn)}<small>${b.begrepp.length}</small></button>`).join('')}</div>`).join('');
       el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
-        this.valdBana = b.dataset.b; store.set('dlg_bana', this.valdBana);
+        this.valdBana = b.dataset.b; store.set(this.banKey, this.valdBana);
         el.querySelectorAll('[data-b]').forEach(x => x.setAttribute('aria-pressed', x === b));
       });
     },
 
     visaNyBana() {
+      const nb = this.cfg.nyBana || {};
       const o = this.overlay(`
         <h1>Egen <span>bana</span></h1>
         <div class="dlg-box">
           <label class="dlg-small" for="dlg-bn">Namn på banan</label>
           <input class="dlg-input" id="dlg-bn" placeholder="t.ex. Utvecklingspsykologi" maxlength="40">
-          <label class="dlg-small" for="dlg-bt">Ett begrepp per rad: <b>begrepp - definition</b> (eller begrepp: definition). Minst 4 rader.</label>
-          <textarea class="dlg-text" id="dlg-bt" placeholder="Piaget - Utvecklingspsykolog som beskrev barns kognitiva utveckling i stadier.&#10;Anknytning - Det känslomässiga bandet mellan barn och omsorgsperson."></textarea>
+          <label class="dlg-small" for="dlg-bt">${nb.hjalp || 'Ett begrepp per rad: <b>begrepp - definition</b> (eller begrepp: definition). Minst 4 rader.'}</label>
+          <textarea class="dlg-text" id="dlg-bt" placeholder="${esc(nb.placeholder || 'Piaget - Utvecklingspsykolog som beskrev barns kognitiva utveckling i stadier.\nAnknytning - Det känslomässiga bandet mellan barn och omsorgsperson.')}"></textarea>
           <p class="dlg-small" id="dlg-bmsg">Banan sparas bara i den här webbläsaren och fungerar i alla spel på DLG Arcade.</p>
           <div class="dlg-row"><button class="dlg-btn small" id="dlg-bspara">Spara bana</button><button class="dlg-btn small dark" id="dlg-bavbryt">Avbryt</button></div>
         </div>`);
       o.querySelector('#dlg-bavbryt').onclick = () => this.visaStart();
       o.querySelector('#dlg-bspara').onclick = () => {
         const namn = o.querySelector('#dlg-bn').value.trim() || 'Min bana';
-        const begrepp = tolkaBana(o.querySelector('#dlg-bt').value);
+        const begrepp = (nb.tolka || tolkaBana)(o.querySelector('#dlg-bt').value);
         if (begrepp.length < 4) { o.querySelector('#dlg-bmsg').innerHTML = `<b style="color:var(--red)">Hittade ${begrepp.length} begrepp. Det behövs minst 4, ett per rad med bindestreck eller kolon.</b>`; return; }
         const egna = store.get(EGNA_KEY, []);
         const id = 'egen-' + Date.now().toString(36);
-        egna.push({ id, namn, kurs: 'Egna banor', egen: true, begrepp });
+        egna.push({ id, namn, kurs: 'Egna banor', egen: true, ...(nb.extra || {}), begrepp });
         store.set(EGNA_KEY, egna);
-        this.valdBana = id; store.set('dlg_bana', id);
+        this.valdBana = id; store.set(this.banKey, id);
         this.visaStart();
       };
       o.querySelector('#dlg-bn').focus();
     },
 
     /* --- spelets livscykel --- */
-    spela() {
+    spela(tillfallig) {
       this.stangOverlay();
       nere.clear(); tryckt.clear();
-      const bana = banaById(this.valdBana) || allaBanor()[0];
+      const bana = (tillfallig && tillfallig.begrepp) ? tillfallig : (banaById(this.valdBana) || allaBanor()[0]);
       this.bana = bana;
       this.fragor = skapaFragor(bana);
       this.setPoang(0);
@@ -425,11 +436,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       if (!this.spelar) return;
       this.spelar = false; this.pausad = false;
       this.cfg.onSlut && this.cfg.onSlut();
+      if (this.cfg.resultat) extra = Object.assign({}, this.cfg.resultat(), extra);
       poang = Math.max(0, Math.min(Math.round(poang), this.cfg.maxPoang));
       this.setPoang(poang);
       LJUD.slut();
       const s = this.fragor.statistik();
       const andel = s.ratt + s.fel ? Math.round(100 * s.ratt / (s.ratt + s.fel)) : 0;
+      const utanTopp = this.bana.egen || this.bana.ovning;
       const o = this.overlay(`
         <h1>${esc(extra.rubrik || 'Game over')}</h1>
         <div class="dlg-score">${fmt(poang)}</div>
@@ -438,17 +451,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <div><b>${s.fel}</b><span>fel</span></div>
           <div><b>${andel} %</b><span>träffsäkerhet</span></div>
         </div>
-        ${s.missade.length ? `<div class="dlg-box"><h2>Begrepp att öva på</h2><div class="dlg-miss">${s.missade.slice(0, 8).map(b => `<div><b>${esc(b.ord)}</b>${esc(b.def)}</div>`).join('')}</div></div>`
+        ${extra.html || ''}
+        ${extra.doljMissade ? '' : s.missade.length ? `<div class="dlg-box"><h2>Begrepp att öva på</h2><div class="dlg-miss">${s.missade.slice(0, 8).map(b => `<div><b>${esc(b.ord)}</b>${esc(b.def)}</div>`).join('')}</div></div>`
           : (s.ratt ? `<div class="dlg-box"><h2>Inga missar – snyggt!</h2></div>` : '')}
         <div class="dlg-box">
           <h2>Topplista · ${esc(this.bana.namn)} · ${NIVAER[this.valdNiva].namn}</h2>
-          ${poang > 0 && !this.bana.egen ? `<div class="dlg-row"><input class="dlg-input" id="dlg-alias" maxlength="20" placeholder="Ditt smeknamn (inte riktiga namnet)" style="flex:1;min-width:160px" value="${esc(store.get('dlg_alias', ''))}"><button class="dlg-btn small" id="dlg-sparapoang">Spara</button></div>` : ''}
-          ${this.bana.egen ? '<p class="dlg-small">Egna banor har ingen topplista.</p>' : ''}
+          ${poang > 0 && !utanTopp ? `<div class="dlg-row"><input class="dlg-input" id="dlg-alias" maxlength="20" placeholder="Ditt smeknamn (inte riktiga namnet)" style="flex:1;min-width:160px" value="${esc(store.get('dlg_alias', ''))}"><button class="dlg-btn small" id="dlg-sparapoang">Spara</button></div>` : ''}
+          ${this.bana.egen ? '<p class="dlg-small">Egna banor har ingen topplista.</p>' : this.bana.ovning ? '<p class="dlg-small">Övningsrundor har ingen topplista.</p>' : ''}
           <p class="dlg-small" id="dlg-msg"></p>
           <div class="dlg-top" id="dlg-top"></div>
         </div>
         <div class="dlg-row"><button class="dlg-btn" id="dlg-igen">Spela igen ▶</button><button class="dlg-btn ghost" id="dlg-byt">Byt bana eller nivå</button></div>`);
-      o.querySelector('#dlg-igen').onclick = () => this.spela();
+      const forra = this.bana;
+      o.querySelector('#dlg-igen').onclick = () => this.spela(forra.ovning ? forra : null);
       o.querySelector('#dlg-byt').onclick = () => this.visaStart();
       const spara = o.querySelector('#dlg-sparapoang');
       if (spara) spara.onclick = async () => {
@@ -465,7 +480,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           this.visaTopp({ namn, poang });
         } catch (e) { msg.textContent = 'Kunde inte spara just nu. ' + e.message; spara.disabled = false; }
       };
-      if (!this.bana.egen) this.visaTopp();
+      if (!utanTopp) this.visaTopp();
+      extra.efter && extra.efter(o);
       (o.querySelector('#dlg-alias') || o.querySelector('#dlg-igen')).focus({ preventScroll: true });
     },
 

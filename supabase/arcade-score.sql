@@ -34,6 +34,7 @@ alter table public."ArcadeScore" add constraint arcadescore_tak check (
     when 'invaders' then score <= 250000
     when 'slukaren' then score <= 100000
     when 'bfrush'   then score <= 999999
+    when 'habla'    then score <= 200000
     else true
   end
 );

@@ -36,10 +36,15 @@ const TOOLS = [
     href: 'spel/bf-rush/index.html', table: 'ArcadeScore', game: 'bfrush', unit: '',
     bg: '#FF6B3D', soft: '#FFE1D4', time: '1–5 min',
     courses: ['Pedagogik', 'Fritidskunskap', 'Hälsopedagogik'],
-    desc: 'Spring dig igenom en vecka på Barn- och fritidsprogrammet! Hoppa och glid förbi hinder, hjälp barn längs vägen och välj rätt i situationerna – från APL till HELG!' }
+    desc: 'Spring dig igenom en vecka på Barn- och fritidsprogrammet! Hoppa och glid förbi hinder, hjälp barn längs vägen och välj rätt i situationerna – från APL till HELG!' },
+  { id: 'habla', title: '¡Habla!', short: '¡Habla!', type: 'Spel', program: 'Alla program', isNew: true,
+    href: 'spel/habla.html', table: 'ArcadeScore', game: 'habla', unit: '',
+    bg: '#7E2A2D', soft: 'var(--lk-cream)', time: '5–10 min',
+    courses: ['Spanska', 'Moderna språk', 'Uttal'],
+    desc: 'Lyssna, läs, säg och skriv spanska glosor. Mikrofonen kollar ditt uttal – och var femte runda väntar El Toro.' }
 ];
 const FEATURED_ID = 'nastaord';
-const COURSES = ['AI-kunskap', 'Hälsopedagogik', 'Fritidskunskap', 'Pedagogik'];
+const COURSES = ['AI-kunskap', 'Hälsopedagogik', 'Fritidskunskap', 'Pedagogik', 'Spanska', 'Moderna språk'];
 
 /* ---------- små hjälpare ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
