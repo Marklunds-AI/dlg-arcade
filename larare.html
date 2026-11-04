@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>För lärare – DLG Arcade</title>
-<meta name="description" content="Dela en bana med klassen, spela tillsammans i klassrummet och se alla begreppsbanor.">
+<meta name="description" content="Ladda upp egna begreppslistor, dela en bana med klassen, spela tillsammans i klassrummet och se alla banor.">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/arcade.css">
 </head>
@@ -16,11 +16,12 @@
     <div class="wrap teach-page">
       <div class="page-title">
         <h1>För <span>lärare</span></h1>
-        <p>Dela en bana med klassen, spela tillsammans och se vilka begrepp som finns.</p>
+        <p>Ladda upp egna begreppslistor, dela en bana med klassen och spela tillsammans.</p>
       </div>
 
       <nav class="teach-toc" aria-label="På sidan">
         <a href="#dela">Dela en bana</a>
+        <a href="#egna">Ladda upp egna banor</a>
         <a href="#klassrum">Spela med hela klassen</a>
         <a href="#banor">Alla banor</a>
         <a href="#monter">Monterläget</a>
@@ -57,6 +58,60 @@
         </div>
       </section>
 
+      <section class="teach-block" id="egna" aria-labelledby="egna-h">
+        <div class="teach-head">
+          <h2 id="egna-h">Ladda upp egna banor</h2>
+          <p>Gör om din egen begreppslista till en bana. Välj om den bara ska delas med en länk eller synas för alla i spelen.</p>
+        </div>
+
+        <div class="login" id="login-box">
+          <p class="status-text" id="login-status">Kontrollerar inloggningen…</p>
+        </div>
+
+        <div class="egna" id="egna-box" hidden>
+          <form class="ban-form" id="ban-form" novalidate>
+            <h3 id="form-h">Ny bana</h3>
+            <div class="form-grid">
+              <label class="field"><span>Namn på banan</span><input class="select" id="b-namn" maxlength="60" placeholder="t.ex. Utvecklingspsykologi" required></label>
+              <label class="field"><span>Kurs</span><input class="select" id="b-kurs" maxlength="40" list="kurs-lista" placeholder="t.ex. Pedagogik" required></label>
+            </div>
+            <datalist id="kurs-lista"></datalist>
+            <fieldset class="field">
+              <legend>Typ av bana</legend>
+              <div class="chips" id="b-typ">
+                <button type="button" class="chip" data-typ="begrepp" aria-pressed="true">Begrepp och förklaringar</button>
+                <button type="button" class="chip" data-typ="sprak" aria-pressed="false">Spanska glosor (¡Habla!)</button>
+              </div>
+            </fieldset>
+            <div class="field">
+              <span id="b-text-label">Begreppen</span>
+              <p class="hint-text" id="b-hjalp"></p>
+              <textarea class="textarea" id="b-text" rows="9" aria-labelledby="b-text-label" spellcheck="false"></textarea>
+              <div class="file-row">
+                <label class="btn btn-secondary btn-md file-btn">Välj fil (.csv eller .txt)<input type="file" id="b-fil" accept=".csv,.txt,.tsv,text/csv,text/plain"></label>
+                <span class="hint-text">eller dra filen hit</span>
+              </div>
+            </div>
+            <div class="preview" id="b-preview" aria-live="polite"></div>
+            <fieldset class="field">
+              <legend>Vem ska se banan?</legend>
+              <label class="radio"><input type="radio" name="b-publik" value="nej" checked> <span><b>Bara de som får länken</b> – banan syns inte i spelens lista.</span></label>
+              <label class="radio"><input type="radio" name="b-publik" value="ja"> <span><b>Alla i spelen</b> – banan visas under sin kurs för alla elever.</span></label>
+            </fieldset>
+            <p class="form-msg" id="b-msg" aria-live="polite"></p>
+            <div class="actions">
+              <button class="btn btn-yellow" type="submit" id="b-spara">Spara banan</button>
+              <button class="btn btn-secondary" type="button" id="b-avbryt" hidden>Avbryt ändringen</button>
+            </div>
+          </form>
+
+          <div class="mine">
+            <div class="mine-head"><h3>Dina banor</h3><span id="whoami"></span></div>
+            <div id="mine-list" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="teach-block" id="klassrum" aria-labelledby="klass-h">
         <div class="teach-head">
           <h2 id="klass-h">Spela med hela klassen</h2>
@@ -78,7 +133,7 @@
           <p>Banorna finns i alla spel som har banbanken. Klicka på en bana för att se begreppen.</p>
         </div>
         <div class="ban-groups" id="ban-groups"></div>
-        <p class="note-text"><b>Egna banor:</b> välj <i>Skapa egen bana</i> på spelets startskärm och klistra in begreppen, ett per rad. En egen bana sparas bara i den webbläsaren där den skapades, så den går inte att dela med en länk. Vill du att en bana ska finnas för alla – hör av dig så läggs den in.</p>
+        <p class="note-text">Vill du ha en egen bana? <a href="#egna">Ladda upp den här på sidan</a>. Banor som någon skapar under <i>Skapa egen bana</i> inne i ett spel finns bara i den webbläsaren.</p>
       </section>
 
       <section class="teach-block" id="monter" aria-labelledby="monter-h">
@@ -117,6 +172,7 @@
   <button class="btn btn-inverse" id="qr-close">Stäng</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="assets/js/banor.js"></script>
 <script src="assets/js/arcade.js"></script>
 <!-- QR-koden ritas med BF-Rushs egen generator (fungerar utan nät och utan externa bibliotek). -->
@@ -128,15 +184,18 @@ $('#arrow-monter').outerHTML = icon('arrow-right', 20);
 
 /* ---------- Dela en bana ---------- */
 const NIVAER = [['latt', 'Lätt'], ['normal', 'Normal'], ['hardcore', 'Hardcore']];
-const banSpel = TOOLS.filter(t => toolBanor(t).length);
+const banSpel = TOOLS.filter(t => t.banor);
 const s = { spel: banSpel[0].id, bana: '', niva: 'normal', direkt: false };
+let mine = [];   // lärarens egna banor (fylls när hen är inloggad)
+const banaById = id => [...mine, ...SHARED_BANOR, ...DLG_BANOR].find(b => b.id === id);
 
 $('#s-spel').innerHTML = banSpel.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
 function fillBanor() {
-  const banor = toolBanor(toolById(s.spel));
-  const kurser = [...new Set(banor.map(b => b.kurs))];
+  const banor = toolBanor(toolById(s.spel), mine);
+  const grupp = b => mine.some(m => m.id === b.id) ? 'Dina banor' : b.kurs;
+  const kurser = [...new Set(banor.map(grupp))];
   $('#s-bana').innerHTML = kurser.map(k => `<optgroup label="${esc(k)}">` +
-    banor.filter(b => b.kurs === k).map(b => `<option value="${b.id}">${esc(b.namn)} (${b.begrepp.length} begrepp)</option>`).join('') +
+    banor.filter(b => grupp(b) === k).map(b => `<option value="${esc(b.id)}">${esc(b.namn)} (${b.begrepp.length} begrepp)</option>`).join('') +
     '</optgroup>').join('');
   if (!banor.some(b => b.id === s.bana)) s.bana = banor[0].id;
   $('#s-bana').value = s.bana;
@@ -179,7 +238,7 @@ $('#s-copy').addEventListener('click', async () => {
 
 const big = $('#qr-big');
 $('#s-big').addEventListener('click', () => {
-  const t = toolById(s.spel), b = DLG_BANOR.find(x => x.id === s.bana);
+  const t = toolById(s.spel), b = banaById(s.bana);
   drawQR($('#qr-big-canvas'), shareUrl());
   $('#qr-big-text').innerHTML = `<b>${esc(t.title)}</b><span>${esc(b.namn)} · ${NIVAER.find(n => n[0] === s.niva)[1]}</span>`;
   big.hidden = false; $('#qr-close').focus();
@@ -192,19 +251,255 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && !big.hidden) closeB
 fillBanor();
 renderShare();
 
-/* ---------- Alla banor ---------- */
-const kurser = [...new Set(DLG_BANOR.map(b => b.kurs))];
-$('#ban-groups').innerHTML = kurser.map(k => `<div class="ban-group">
-  <h3>${esc(k)}</h3>
-  ${DLG_BANOR.filter(b => b.kurs === k).map(b => {
-    const spel = TOOLS.filter(t => toolBanor(t).includes(b));
-    return `<details class="ban">
-      <summary><b>${esc(b.namn)}</b><span>${b.begrepp.length} begrepp</span></summary>
-      <dl>${b.begrepp.map(c => `<div><dt>${esc(c.ord)}</dt><dd>${esc(c.def)}</dd></div>`).join('')}</dl>
-      <div class="ban-play">Spela i: ${spel.map(t => `<a href="${playHref(t, b.id)}">${esc(t.title)}</a>`).join(' · ')}</div>
-    </details>`;
-  }).join('')}
-</div>`).join('');
+/* ---------- Alla banor (inbyggda + lärarnas publika) ---------- */
+function renderAllaBanor() {
+  const alla = [...DLG_BANOR, ...SHARED_BANOR];
+  const kurser = [...new Set(alla.map(b => b.kurs))];
+  $('#ban-groups').innerHTML = kurser.map(k => `<div class="ban-group">
+    <h3>${esc(k)}</h3>
+    ${alla.filter(b => b.kurs === k).map(b => {
+      const spel = TOOLS.filter(t => t.banor && banaFits(t, b));
+      return `<details class="ban">
+        <summary><b>${esc(b.namn)}</b><span>${b.begrepp.length} begrepp</span></summary>
+        ${b.delad && b.skapad_av ? `<p class="ban-by">Uppladdad av ${esc(b.skapad_av)}</p>` : ''}
+        <dl>${b.begrepp.map(c => `<div><dt>${esc(c.ord)}</dt><dd>${esc(c.def)}</dd></div>`).join('')}</dl>
+        <div class="ban-play">Spela i: ${spel.map(t => `<a href="${playHref(t, b.id)}">${esc(t.title)}</a>`).join(' · ')}</div>
+      </details>`;
+    }).join('')}
+  </div>`).join('');
+}
+renderAllaBanor();
+loadSharedBanor().then(() => { renderAllaBanor(); fillBanor(); renderShare(); });
+
+/* ---------- Ladda upp egna banor ----------
+   Inloggning med Google via Supabase Auth. Databasen (supabase/larar-banor.sql) släpper bara
+   in konton på LARAR_DOMAN som loggat in med Google – kontrollen här i sidan är bara för att
+   kunna visa ett tydligt meddelande. */
+const LARAR_DOMAN = 'utb.lidkoping.se';
+const sb = window.supabase ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: 'pkce' } }) : null;
+let user = null, editId = null, typ = 'begrepp', parsed = { begrepp: [], fel: [] };
+const isTeacher = u => !!u && (u.email || '').toLowerCase().endsWith('@' + LARAR_DOMAN);
+
+const HJALP = {
+  begrepp: 'Ett begrepp per rad: <b>begrepp</b> och <b>förklaring</b> med tab, semikolon, kolon eller bindestreck emellan. Från Excel eller Google Kalkylark: markera de två kolumnerna, kopiera och klistra in här. Minst 4 begrepp.',
+  sprak: 'En glosa per rad: <b>spanska ; svenska</b>. Skriv substantiv med artikel, t.ex. <b>la manzana ; äpplet</b>. Från Excel eller Google Kalkylark: markera de två kolumnerna, kopiera och klistra in här. Minst 4 glosor.'
+};
+const EXEMPEL = {
+  begrepp: 'Anknytning ; Det känslomässiga bandet mellan barn och omsorgsperson.\nPiaget ; Utvecklingspsykolog som beskrev barns tänkande i stadier.',
+  sprak: 'la manzana ; äpplet\nel pan ; brödet'
+};
+
+/* Läser en lista: en rad per begrepp. Avgränsaren väljs för hela texten (tab, semikolon),
+   annars per rad (" - ", ":" och för .csv även komma). Citattecken som Excel sätter runt fält tas bort. */
+function parseList(text, isCsv) {
+  const rader = text.replace(/^﻿/, '').split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+  const andel = tecken => rader.filter(r => r.includes(tecken)).length / Math.max(1, rader.length);
+  const sep = andel('\t') >= 0.5 ? '\t' : andel(';') >= 0.5 ? ';' : (isCsv && andel(',') >= 0.5) ? ',' : null;
+  const splitCsv = (rad, d) => {
+    const ut = []; let cell = '', q = false;
+    for (let i = 0; i < rad.length; i++) {
+      const c = rad[i];
+      if (q) { if (c === '"' && rad[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; }
+      else if (c === '"' && !cell.trim()) q = true;
+      else if (c === d) { ut.push(cell); cell = ''; }
+      else cell += c;
+    }
+    ut.push(cell);
+    return ut.map(x => x.trim()).filter((x, i) => i < 2 || x);
+  };
+  const begrepp = [], fel = [], sett = new Set();
+  rader.forEach((rad, i) => {
+    let delar;
+    if (sep) delar = splitCsv(rad, sep);
+    else { const m = rad.match(/^(.+?)\s*(?:\s[-–—]\s|:)\s*(.+)$/); delar = m ? [m[1], m[2]] : [rad]; }
+    const ord = (delar[0] || '').trim(), def = delar.slice(1).filter(Boolean).join(sep === ',' ? ', ' : ' ').trim();
+    if (i === 0 && /^(begrepp|ord|term|glosa|spanska)$/i.test(ord) && /^(definition|förklaring|betydelse|svenska|beskrivning)$/i.test(def)) return;
+    if (!ord || !def) { fel.push({ rad: i + 1, text: rad, why: 'saknar förklaring' }); return; }
+    if (ord.length > 80 || def.length > 300) { fel.push({ rad: i + 1, text: rad, why: 'för lång (max 80 tecken för begreppet och 300 för förklaringen)' }); return; }
+    if (sett.has(ord.toLowerCase())) { fel.push({ rad: i + 1, text: rad, why: 'finns redan' }); return; }
+    sett.add(ord.toLowerCase());
+    begrepp.push({ ord, def });
+  });
+  return { begrepp: begrepp.slice(0, 200), fel, forMango: begrepp.length > 200 };
+}
+
+function renderPreview() {
+  parsed = parseList($('#b-text').value, parsed.csv);
+  const box = $('#b-preview');
+  if (!$('#b-text').value.trim()) { box.innerHTML = ''; return; }
+  const n = parsed.begrepp.length, ord = typ === 'sprak' ? ['glosa', 'glosor'] : ['begrepp', 'begrepp'];
+  const ok = n >= 4;
+  box.innerHTML = `<p class="${ok ? 'ok' : 'warn'}"><b>${n} ${n === 1 ? ord[0] : ord[1]}</b> ${ok ? 'hittade – så här blir banan:' : '– det behövs minst 4.'}</p>
+    ${n ? `<div class="preview-table"><table><thead><tr><th>${typ === 'sprak' ? 'Spanska' : 'Begrepp'}</th><th>${typ === 'sprak' ? 'Svenska' : 'Förklaring'}</th></tr></thead>
+      <tbody>${parsed.begrepp.slice(0, 6).map(b => `<tr><td>${esc(b.ord)}</td><td>${esc(b.def)}</td></tr>`).join('')}</tbody></table>
+      ${n > 6 ? `<p class="hint-text">… och ${n - 6} till.</p>` : ''}</div>` : ''}
+    ${parsed.forMango ? '<p class="warn">Bara de 200 första kommer med.</p>' : ''}
+    ${parsed.fel.length ? `<details class="fel"><summary>${parsed.fel.length} ${parsed.fel.length === 1 ? 'rad' : 'rader'} kom inte med</summary>
+      <ul>${parsed.fel.slice(0, 20).map(f => `<li>Rad ${f.rad}: <i>${esc(f.text.slice(0, 80))}</i> – ${f.why}</li>`).join('')}</ul></details>` : ''}`;
+}
+
+function setTyp(ny) {
+  typ = ny;
+  $('#b-typ').querySelectorAll('[data-typ]').forEach(b => b.setAttribute('aria-pressed', b.dataset.typ === typ));
+  $('#b-hjalp').innerHTML = HJALP[typ];
+  $('#b-text').placeholder = EXEMPEL[typ];
+  $('#b-text-label').textContent = typ === 'sprak' ? 'Glosorna' : 'Begreppen';
+  if (typ === 'sprak' && !$('#b-kurs').value) $('#b-kurs').value = 'Spanska';
+  renderPreview();
+}
+$('#b-typ').addEventListener('click', e => { const b = e.target.closest('[data-typ]'); if (b) setTyp(b.dataset.typ); });
+$('#b-text').addEventListener('input', () => { parsed.csv = false; renderPreview(); });
+
+// Filer: Excel sparar ofta CSV i Windows-1252, så läs som UTF-8 och fall tillbaka om det inte går.
+async function readFile(file) {
+  if (/\.(xlsx?|ods|numbers)$/i.test(file.name)) {
+    $('#b-msg').innerHTML = '<span class="warn">Excel-filer går inte att läsa direkt. Spara som <b>CSV</b> (Arkiv → Spara som → CSV) eller kopiera kolumnerna och klistra in dem.</span>';
+    return;
+  }
+  const buf = await file.arrayBuffer();
+  let text;
+  try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+  catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
+  $('#b-text').value = text;
+  parsed.csv = /\.csv$/i.test(file.name);
+  if (!$('#b-namn').value) $('#b-namn').value = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 60);
+  $('#b-msg').textContent = '';
+  renderPreview();
+}
+$('#b-fil').addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ''; });
+const drop = $('#ban-form');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', e => { if (!drop.contains(e.relatedTarget)) drop.classList.remove('drag'); });
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('drag'); if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+
+function resetForm() {
+  editId = null;
+  $('#ban-form').reset();
+  $('#form-h').textContent = 'Ny bana';
+  $('#b-spara').textContent = 'Spara banan';
+  $('#b-avbryt').hidden = true;
+  setTyp('begrepp');
+}
+$('#b-avbryt').addEventListener('click', () => { resetForm(); $('#b-msg').textContent = ''; });
+
+const dbFel = e => /PGRST20[25]|42P01|42883|does not exist|schema cache/i.test((e.message || '') + (e.code || ''))
+  ? 'Databasen är inte förberedd än. Kör supabase/larar-banor.sql i Supabase.'
+  : /row-level security|42501|permission/i.test((e.message || '') + (e.code || ''))
+  ? `Bara lärarkonton på @${LARAR_DOMAN} kan spara banor.`
+  : 'Det gick inte att spara: ' + (e.message || e);
+
+$('#ban-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = $('#b-msg');
+  renderPreview();
+  const namn = $('#b-namn').value.trim(), kurs = $('#b-kurs').value.trim();
+  if (!namn || !kurs) { msg.innerHTML = '<span class="warn">Skriv ett namn och en kurs.</span>'; return; }
+  if (parsed.begrepp.length < 4) { msg.innerHTML = '<span class="warn">Banan behöver minst 4 begrepp.</span>'; return; }
+  const rad = { namn, kurs, sprak: typ === 'sprak' ? 'es-ES' : null, begrepp: parsed.begrepp,
+    publik: document.querySelector('[name="b-publik"]:checked').value === 'ja' };
+  $('#b-spara').disabled = true; msg.textContent = 'Sparar…';
+  const { data, error } = editId
+    ? await sb.from('ArcadeBana').update(rad).eq('id', editId).select('id').single()
+    : await sb.from('ArcadeBana').insert(rad).select('id').single();
+  $('#b-spara').disabled = false;
+  if (error) { msg.innerHTML = `<span class="warn">${esc(dbFel(error))}</span>`; return; }
+  msg.innerHTML = `<span class="ok">${editId ? 'Ändringen är sparad.' : 'Banan är sparad.'} Dela den med länken nedan.</span>`;
+  resetForm();
+  await loadMine();
+  if (rad.publik) { sharedLoading = null; await loadSharedBanor(); renderAllaBanor(); }
+  shareBana(data.id);
+});
+
+async function loadMine() {
+  const list = $('#mine-list');
+  const { data, error } = await sb.rpc('mina_banor');
+  if (error) { list.innerHTML = `<p class="warn">${esc(dbFel(error))}</p>`; return; }
+  mine = (data || []).map(b => ({ ...b, sprak: b.sprak || undefined }));
+  list.innerHTML = mine.length ? mine.map(b => `<div class="mine-row">
+      <div class="mine-info"><b>${esc(b.namn)}</b>
+        <span>${esc(b.kurs)} · ${b.begrepp.length} ${b.sprak ? 'glosor' : 'begrepp'} · <span class="badge ${b.publik ? 'pub' : ''}">${b.publik ? 'Alla i spelen' : 'Bara med länk'}</span></span></div>
+      <div class="mine-actions">
+        <button class="btn btn-yellow btn-sm" data-dela="${esc(b.id)}">Dela</button>
+        <button class="btn btn-secondary btn-sm" data-andra="${esc(b.id)}">Ändra</button>
+        <button class="btn btn-ghost btn-sm" data-bort="${esc(b.id)}">Ta bort</button>
+      </div></div>`).join('')
+    : '<p class="hint-text">Du har inga egna banor än. Fyll i formuläret för att skapa den första.</p>';
+  fillBanor(); renderShare();
+}
+
+function shareBana(id) {
+  const b = mine.find(x => x.id === id) || banaById(id);
+  if (!b) return;
+  s.spel = b.sprak ? 'habla' : (toolById(s.spel).banor === 'begrepp' ? s.spel : 'invaders');
+  s.bana = id;
+  $('#s-spel').value = s.spel;
+  fillBanor(); renderShare();
+  $('#dela').scrollIntoView({ behavior: 'smooth' });
+}
+
+$('#mine-list').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.dela) shareBana(b.dataset.dela);
+  if (b.dataset.andra) {
+    const x = mine.find(m => m.id === b.dataset.andra);
+    editId = x.id;
+    $('#b-namn').value = x.namn; $('#b-kurs').value = x.kurs;
+    setTyp(x.sprak ? 'sprak' : 'begrepp');
+    $('#b-text').value = x.begrepp.map(c => c.ord + ' ; ' + c.def).join('\n');
+    document.querySelector(`[name="b-publik"][value="${x.publik ? 'ja' : 'nej'}"]`).checked = true;
+    $('#form-h').textContent = 'Ändra ' + x.namn;
+    $('#b-spara').textContent = 'Spara ändringen';
+    $('#b-avbryt').hidden = false; $('#b-msg').textContent = '';
+    renderPreview();
+    $('#ban-form').scrollIntoView({ behavior: 'smooth' });
+  }
+  if (b.dataset.bort) {
+    const x = mine.find(m => m.id === b.dataset.bort);
+    if (!confirm(`Ta bort banan "${x.namn}"? Länkar till den slutar fungera.`)) return;
+    const { error } = await sb.from('ArcadeBana').delete().eq('id', x.id);
+    if (error) { alert(dbFel(error)); return; }
+    if (editId === x.id) resetForm();
+    await loadMine();
+    if (x.publik) { sharedLoading = null; await loadSharedBanor(); renderAllaBanor(); }
+  }
+});
+
+function renderLogin() {
+  const box = $('#login-box');
+  $('#egna-box').hidden = !isTeacher(user);
+  if (!sb) { box.innerHTML = '<p class="warn">Inloggningen kunde inte laddas. Kontrollera nätet och ladda om sidan.</p>'; return; }
+  if (!user) {
+    box.innerHTML = `<p>Logga in med ditt Google-konto på skolan (<b>@${LARAR_DOMAN}</b>) för att ladda upp banor.</p>
+      <button class="btn btn-inverse" id="g-login">${GOOGLE_G}Logga in med Google</button>`;
+    $('#g-login').addEventListener('click', () => sb.auth.signInWithOAuth({ provider: 'google', options: {
+      redirectTo: location.origin + location.pathname + '#egna',
+      queryParams: { hd: LARAR_DOMAN, prompt: 'select_account' } } }));
+  } else if (!isTeacher(user)) {
+    box.innerHTML = `<p class="warn">Du är inloggad som <b>${esc(user.email)}</b>. Bara konton på @${LARAR_DOMAN} kan ladda upp banor.</p>
+      <button class="btn btn-secondary" id="g-logout">Logga ut och byt konto</button>`;
+    $('#g-logout').addEventListener('click', () => sb.auth.signOut());
+  } else {
+    box.innerHTML = '';
+    box.hidden = true;
+    $('#whoami').innerHTML = `${esc(user.user_metadata.full_name || user.email)} · <button class="linkbtn" id="g-logout">Logga ut</button>`;
+    $('#g-logout').addEventListener('click', () => sb.auth.signOut());
+    loadMine();
+    return;
+  }
+  box.hidden = false;
+}
+const GOOGLE_G = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.2-3.9 7.2-9.6 7.2-16.9z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.6 2.2-8.8 2.2-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+
+$('#kurs-lista').innerHTML = COURSES.concat([...new Set(DLG_BANOR.map(b => b.kurs))]).filter((k, i, a) => a.indexOf(k) === i).map(k => `<option value="${esc(k)}">`).join('');
+setTyp('begrepp');
+if (sb) {
+  sb.auth.onAuthStateChange((ev, session) => {
+    const ny = session ? session.user : null;
+    if ((ny && ny.id) === (user && user.id) && ev !== 'INITIAL_SESSION') return;
+    user = ny; if (!user) mine = [];
+    renderLogin(); fillBanor(); renderShare();
+  });
+} else renderLogin();
 
 /* ---------- Vad kan spelen? ---------- */
 const KLASSRUM = { slukaren: 'Ja, klassrumsläget', bfrush: 'Monterläget' };

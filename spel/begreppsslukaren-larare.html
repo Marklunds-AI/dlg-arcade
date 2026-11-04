@@ -101,7 +101,7 @@ function visaSkapa(fel = '') {
     <div class="dlg-box"><h2>Bana</h2><div class="dlg-banor">${Object.entries(grupper).map(([k, banor]) => `
       <div class="dlg-kurs">${esc(k)}</div>
       <div class="dlg-chips">${banor.map(b => `<button class="dlg-chip" data-b="${esc(b.id)}" aria-pressed="${b.id === inst.bana}">${esc(b.namn)}<small>${b.begrepp.length}</small></button>`).join('')}</div>`).join('')}</div>
-      <p class="dlg-small">Egna banor skapar du på startskärmen i spelet. De finns bara i den här webbläsaren.</p></div>
+      <p class="dlg-small">Egna banor som alla elever kan spela laddar du upp på DLG Arcades lärarsida.</p></div>
     <div class="lr-falt">
       <div class="dlg-box"><h2>När slutar omgången?</h2>
         <div class="dlg-chips"><button class="dlg-chip" data-typ="fragor" aria-pressed="${inst.typ === 'fragor'}">Efter antal frågor</button><button class="dlg-chip" data-typ="tid" aria-pressed="${inst.typ === 'tid'}">Efter en tid</button></div>
@@ -413,7 +413,7 @@ function visaSlut() {
   $('#lr-stang').onclick = stangRum;
 }
 
-visaSkapa();
+DLGSpel.laddaDelade().then(() => visaSkapa());
 </script>
 </body>
 </html>

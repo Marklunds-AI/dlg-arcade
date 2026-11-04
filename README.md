@@ -11,7 +11,7 @@ Spelsajt för elever på De la Gardiegymnasiet, Lidköping. Här tränar elevern
 | `index.html` | Startsida med veckans spel, spelväljare och topplista (bläddrar mellan spelen) |
 | `verktyg.html` | Alla spel, med filter och sök – sökningen hittar även begrepp i banorna |
 | `spela.html?spel=<id>` | Spelsida: spelet i en ram, info, banor och topplista. `&bana=<id>&niva=<latt/normal/hardcore>` skickas vidare till spelet |
-| `larare.html` | För lärare: dela en bana med länk och QR-kod, klassrumsläget, alla banor, monterläget |
+| `larare.html` | För lärare: ladda upp egna banor (Google-inloggning), dela en bana med länk och QR-kod, klassrumsläget, alla banor, monterläget |
 | `spel/` | Själva spelen, en fristående HTML-fil per spel |
 | `assets/js/arcade.js` | **Spelkatalogen (`TOOLS`)** och gemensam kod |
 | `assets/css/arcade.css` | Utseende, byggt på Lidköpings kommuns designsystem |
@@ -30,14 +30,24 @@ Nya spel byggs på den gemensamma motorn. Den ger val av bana och nivå, egna ba
 
 Länka direkt till en bana och nivå: `spel/begreppsinvaders.html?bana=salutogent&niva=latt`.
 
-## ¡Habla! – spanska glosor och uttal
+## ¡Habla! – glosor och uttal i fyra språk
 
-`spel/habla.html` tränar spanska glosor med fyra utmaningar som blandas: **Escucha** (lyssna och välj svensk betydelse), **Lee** (läs svenska och välj spanska), **Habla** (säg ordet, taligenkänningen jämför med svaret) och **Escribe** (lyssna och skriv). Var femte runda kommer bossrundan El Toro. Allt ljud kommer från webbläsarens Web Speech API, så det behövs inga ljudfiler eller API-nycklar.
+`spel/habla.html` tränar glosor i **spanska, franska, tyska och engelska**. Eleven väljer språk på startskärmen. Fyra utmaningar blandas: lyssna och välj svensk betydelse, läs svenska och välj ordet, säg ordet (taligenkänningen jämför med svaret) och lyssna och skriv. Utmaningarna heter något på varje språk, till exempel Escucha/Lee/Habla/Escribe på spanska och Listen/Read/Speak/Write på engelska. Var femte runda kommer en boss: El Toro, Le Coq, Der Bär eller The Dragon. Allt ljud kommer från webbläsarens Web Speech API, så det behövs inga ljudfiler eller API-nycklar.
 
-- **Banor:** banorna med `sprak: 'es-ES'` i `banor.js` (kursen Spanska). Bara de banorna visas i ¡Habla!. Egna banor klistras in som `spanska ; svenska`, en glosa per rad.
-- **Direktlänk:** `spel/habla.html?bana=es-comida&niva=latt`.
-- **Taligenkänning** finns i Chrome och Edge. I Chrome skickas talet till Googles taltjänst medan eleven håller in knappen. Saknas taligenkänning (t.ex. Firefox) eller nekas mikrofonen blir Habla självbedömning. Testa det läget med `?mikrofon=av`.
-- **Spansk röst:** spelet väljer en es-ES-röst och tar annars valfri spansk röst. Saknas spansk röst visas en varning på startskärmen.
+- **Svårigheten följer eleven:** spelet sparar en färdighet (0–100, visas som nivå 1–10) per språk i webbläsaren. Rätt svar höjer den lite och fel sänker den mer, så att den stannar där eleven klarar ungefär tre av fyra. Färdigheten styr:
+  - **Utmaningarna:** först mest lyssna och läsa, sedan allt mer tal och skrift.
+  - **Tid:** tidsgränsen blir kortare. Under nivå 3 finns ingen tidsgräns.
+  - **Alternativen:** de blir mer lika svaret.
+  - **Uppläsningen:** den blir snabbare.
+  - **Ordvalet:** längre ord och fraser kommer oftare.
+  - **Skrivhjälp:** betydelsen visas i skriv-utmaningen bara upp till nivå 6.
+  - **Poäng:** högre nivå ger mer poäng.
+
+  Nivåvalet förskjuter färdigheten. Lätt har ett tak och varken tidsgräns eller liv. Hardcore ligger alltid en bit över elevens nivå.
+- **Banor:** banorna i `banor.js` som har `sprak` satt till `es-ES`, `fr-FR`, `de-DE` eller `en-GB`. Det finns fem banor per språk, och bara banorna i det valda språket visas. Engelskan är på gymnasienivå: vardagsfraser, false friends, känslor, vård och hälsa samt arbete och skola. Egna banor klistras in som `ord ; svenska`, en glosa per rad, och sparas på det valda språket.
+- **Direktlänk:** `spel/habla.html?bana=fr-nourriture&niva=latt`. Banan avgör språket. `?sprak=de` väljer bara språket.
+- **Taligenkänning:** finns i Chrome och Edge. I Chrome skickas talet till Googles taltjänst medan eleven håller in knappen. Om taligenkänning saknas (t.ex. i Firefox) eller mikrofonen nekas, bedömer eleven sitt uttal själv. Testa det läget med `?mikrofon=av`.
+- **Röst:** spelet väljer en röst för språket, till exempel es-ES eller en-GB. Finns ingen sådan tar det valfri röst på samma språk. Saknas röst helt visas en varning på startskärmen.
 
 ## Begreppsslukaren och klassrumsläget
 
@@ -168,6 +178,24 @@ Resten sköter sig självt:
 
 Äldre spel (Begreppsracet, Begrepps-Snake, Nästa ord) har egna banor och egna tabeller tills de flyttas över.
 
+## Lärarnas egna banor
+
+På `larare.html` loggar lärare in med sitt Google-konto på skolan och laddar upp en begreppslista. Den blir en bana i alla spel som har banbanken (spanska glosor blir banor i ¡Habla!).
+
+- **Format:** en rad per begrepp, med begrepp och förklaring åtskilda av tab, semikolon, kolon eller bindestreck. Det går att klistra in två kolumner direkt från Excel eller Google Kalkylark, eller att välja en .csv- eller .txt-fil. En rubrikrad som "Begrepp; Förklaring" hoppas över. 4–200 begrepp.
+- **Synlighet:** *Bara med länk* (banan syns bara via länken eller QR-koden, `?bana=l-xxxxxxxxxx`) eller *Alla i spelen* (visas under sin kurs för alla).
+- **Behörighet:** bara konton på `@utb.lidkoping.se` som loggat in med Google får skapa banor. Det kontrolleras i databasen (`ar_larare()` i `supabase/larar-banor.sql`), inte bara i sidan. Var och en kan bara ändra och ta bort sina egna banor.
+- **Spelen** hämtar lärarbanorna när startskärmen öppnas (`DLGSpel.laddaDelade()` i `dlg-spel.js`). Svarar inte Supabase inom 4 s spelar man med de inbyggda banorna.
+
+### Engångsinställning
+
+1. **Databasen:** kör `supabase/larar-banor.sql` i Supabase (SQL Editor → New query → Run).
+2. **Google:** i [Google Cloud Console](https://console.cloud.google.com/) – helst i skolans Google Workspace – skapa ett projekt. Under *Google Auth Platform* väljer du målgruppen **Internal** (då kan bara skolans konton logga in). Skapa sedan en *OAuth-klient* av typen *Webbapplikation* med den auktoriserade omdirigeringsadressen `https://yafkxfuveudkccjkkcto.supabase.co/auth/v1/callback`.
+3. **Supabase:** Authentication → Sign In / Providers → **Google**: slå på och klistra in klient-id och klienthemlighet från steg 2.
+4. **Supabase:** Authentication → URL Configuration: sätt *Site URL* till `https://marklunds-ai.github.io/dlg-arcade/` och lägg till `https://marklunds-ai.github.io/dlg-arcade/larare.html` och `http://localhost:8765/larare.html` under *Redirect URLs*.
+
+Ta bort en olämplig bana: Table Editor → `ArcadeBana`.
+
 ## Topplistor
 
 Topplistorna ligger i Supabase och hämtas via REST med den publika anon-nyckeln. Eleverna sparar resultat under ett **smeknamn**, inte under sitt riktiga namn, och det finns ingen inloggning. RLS-reglerna tillåter bara att resultat läses och läggs till.
@@ -178,6 +206,8 @@ Topplistorna ligger i Supabase och hämtas via REST med den publika anon-nyckeln
 | Begreppsracet | `Highscore` |
 | Begrepps-Snake Deluxe | `SnakeHighscore` |
 | Begreppsinvaders, Begreppsslukaren, BF-Rush, ¡Habla! och alla nya motorspel | `ArcadeScore` (kolumnen `game`) |
+
+Lärarnas banor ligger i tabellen `ArcadeBana`.
 
 ## Publicering
 

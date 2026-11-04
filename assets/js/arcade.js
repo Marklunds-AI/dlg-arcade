@@ -43,8 +43,8 @@ const TOOLS = [
   { id: 'habla', title: '¡Habla!', short: '¡Habla!', type: 'Spel', program: 'Alla program', added: '2026-11-04', banor: 'sprak',
     href: 'spel/habla.html', table: 'ArcadeScore', game: 'habla', unit: '',
     bg: '#7E2A2D', soft: 'var(--lk-cream)', time: '5–10 min',
-    courses: ['Spanska', 'Moderna språk'],
-    desc: 'Lyssna, läs, säg och skriv spanska glosor. Mikrofonen kollar ditt uttal – och var femte runda väntar El Toro.' }
+    courses: ['Spanska', 'Franska', 'Tyska', 'Engelska', 'Moderna språk'],
+    desc: 'Lyssna, läs, säg och skriv glosor på spanska, franska, tyska eller engelska. Mikrofonen kollar ditt uttal, spelet blir svårare ju bättre du blir – och var femte runda väntar en boss.' }
 ];
 // Veckans spel väljs automatiskt (se featuredTool). Skriv ett id här för att låsa ett spel.
 const FEATURED_ID = null;
@@ -65,10 +65,22 @@ function featuredTool() {
   return TOOLS[week % TOOLS.length];
 }
 
-/* ---------- banor (banor.js) ----------
-   Spel med banor: 'begrepp' visar banorna utan språk, banor: 'sprak' bara språkbanorna. */
-const toolBanor = t => !t.banor || !window.DLG_BANOR ? []
-  : DLG_BANOR.filter(b => t.banor === 'sprak' ? !!b.sprak : !b.sprak);
+/* ---------- banor (banor.js + lärarnas banor) ----------
+   Spel med banor: 'begrepp' visar banorna utan språk, banor: 'sprak' bara språkbanorna.
+   SHARED_BANOR fylls av loadSharedBanor() med de publika banorna från lärarsidan. */
+let SHARED_BANOR = [];
+const banaFits = (t, b) => t.banor === 'sprak' ? !!b.sprak : !b.sprak;
+const toolBanor = (t, extra = []) => !t.banor ? []
+  : [...(window.DLG_BANOR || []), ...SHARED_BANOR, ...extra]
+    .filter((b, i, all) => banaFits(t, b) && all.findIndex(x => x.id === b.id) === i);
+let sharedLoading = null;
+function loadSharedBanor() {
+  return sharedLoading || (sharedLoading = fetch(`${SUPABASE_URL}/rest/v1/ArcadeBana?select=id,namn,kurs,sprak,begrepp,skapad_av&publik=eq.true&order=kurs,namn`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => { SHARED_BANOR = rows.map(b => ({ ...b, sprak: b.sprak || undefined, delad: true })); return SHARED_BANOR; })
+    .catch(() => SHARED_BANOR));
+}
 const playHref = (t, bana, niva) => 'spela.html?spel=' + t.id + (bana ? '&bana=' + encodeURIComponent(bana) : '') + (niva ? '&niva=' + niva : '');
 
 /* ---------- små hjälpare ---------- */

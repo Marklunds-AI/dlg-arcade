@@ -100,6 +100,7 @@ $('#clear').addEventListener('click', () => {
   $('#q').value = ''; $('#course').value = ''; $('#program').value = ''; render();
 });
 render();
+loadSharedBanor().then(() => { if (f.q) render(); });   // lärarnas publika banor går också att söka i
 </script>
 </body>
 </html>

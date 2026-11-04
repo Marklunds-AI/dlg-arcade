@@ -69,12 +69,14 @@ $('#game-desc').textContent = t.desc;
 $('#game-time').innerHTML = icon('clock', 18) + esc(t.time);
 $('#game-courses').innerHTML = icon('graduation-cap', 18) + esc(t.courses.join(', '));
 $('#ps-title').textContent = 'High score i ' + t.short;
-const banor = toolBanor(t);
-if (banor.length) {
-  $('#banlist').hidden = false;
+function renderBanor() {
+  const banor = toolBanor(t);
+  $('#banlist').hidden = !banor.length;
   $('#ban-chips').innerHTML = banor.map(b =>
     `<a class="chip" href="${playHref(t, b.id)}" aria-pressed="${b.id === q.get('bana')}">${esc(b.namn)}</a>`).join('');
 }
+renderBanor();
+loadSharedBanor().then(renderBanor);
 
 async function loadScores() {
   $('#play-rows').innerHTML = statusHTML('Hämtar resultat…');

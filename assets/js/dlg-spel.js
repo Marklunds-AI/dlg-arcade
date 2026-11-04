@@ -26,6 +26,7 @@
      DLGSpel.spela(bana)                   // starta med en tillfällig bana; ovning: true = ingen topplista
      DLGSpel.startaExtern() / avslutaExtern()   // spelet styr själv (t.ex. klassrum): ingen paus, ingen topplista
      DLGSpel.skapaFragor(bana), allaBanor(), banaById(id), stil()   // för sidor som inte kör start()
+     await DLGSpel.laddaDelade()          // lärarnas banor från Supabase (start() väntar själv på dem)
 */
 (function () {
   'use strict';
@@ -59,7 +60,29 @@
 
   /* ---------- banor ---------- */
   const EGNA_KEY = 'dlg_egna_banor';
-  const allaBanor = () => [...(window.DLG_BANOR || []), ...store.get(EGNA_KEY, [])].filter(b => !DLGSpel.cfg || !DLGSpel.cfg.banFilter || DLGSpel.cfg.banFilter(b));
+  let delade = [];   // lärarnas banor från lärarsidan (tabellen ArcadeBana)
+  const allaBanor = () => [...(window.DLG_BANOR || []), ...delade, ...store.get(EGNA_KEY, [])].filter(b => !DLGSpel.cfg || !DLGSpel.cfg.banFilter || DLGSpel.cfg.banFilter(b));
+
+  // Hämtar de publika lärarbanorna, och banan i ?bana=l-... om den bara delas med länk.
+  // Går det inte inom 4 s spelar man med de inbyggda banorna.
+  let laddning = null;
+  function laddaDelade() {
+    if (laddning) return laddning;
+    const fran = b => ({ id: b.id, namn: b.namn, kurs: b.kurs, delad: true, begrepp: b.begrepp, ...(b.sprak ? { sprak: b.sprak } : {}) });
+    const hamta = async () => {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/ArcadeBana?select=id,namn,kurs,sprak,begrepp&publik=eq.true&order=kurs,namn`, { headers: DB_HEADERS });
+      const lista = r.ok ? (await r.json()).map(fran) : [];
+      const lankad = new URLSearchParams(location.search).get('bana');
+      if (lankad && /^l-[0-9a-f]{10}$/.test(lankad) && !lista.some(b => b.id === lankad)) {
+        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/rpc/hamta_bana`, { method: 'POST', headers: DB_HEADERS, body: JSON.stringify({ bana_id: lankad }) });
+        const rad = r2.ok ? (await r2.json())[0] : null;
+        if (rad) lista.push({ ...fran(rad), kurs: 'Från din lärare' });
+      }
+      delade = lista.filter(b => Array.isArray(b.begrepp) && b.begrepp.length >= 4);
+    };
+    laddning = Promise.race([hamta(), new Promise(r => setTimeout(r, 4000))]).catch(() => {});
+    return laddning;
+  }
   const banaById = id => allaBanor().find(b => b.id === id);
 
   // Tolkar inklistrad text: en rad per begrepp, "ord - definition", "ord: definition" eller tab.
@@ -276,8 +299,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       });
       if (!cfg.knappar.length) pad.remove();
 
-      // förval från adressen: ?bana=salutogent&niva=normal
-      const q = new URLSearchParams(location.search);
+      // Startskärmen visas när lärarbanorna är hämtade – om inte spelet redan visat något annat
+      // under tiden (t.ex. klassrummet i Begreppsslukaren med ?rum=).
+      const vanta = this.overlay('<h1>Hämtar <span>banor…</span></h1>');
+      laddaDelade().then(() => this.valjForval(this.ov === vanta));
+    },
+
+    // förval från adressen: ?bana=salutogent&niva=normal
+    valjForval(visa = true) {
+      const cfg = this.cfg, q = new URLSearchParams(location.search);
       this.banKey = cfg.banFilter ? 'dlg_bana_' + cfg.id : 'dlg_bana';
       const forsta = (allaBanor()[0] || {}).id;
       this.valdBana = (q.get('bana') && banaById(q.get('bana'))) ? q.get('bana') : store.get(this.banKey, forsta);
@@ -285,7 +315,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       this.valdNiva = NIVAER[q.get('niva')] ? q.get('niva') : store.get('dlg_niva', 'normal');
       if (!NIVAER[this.valdNiva]) this.valdNiva = 'normal';
 
-      this.visaStart();
+      if (visa) this.visaStart();
     },
 
     stil() {
@@ -512,6 +542,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     }
   };
 
-  Object.assign(DLGSpel, { skapaFragor, allaBanor, banaById });
+  Object.assign(DLGSpel, { skapaFragor, allaBanor, banaById, laddaDelade });
   window.DLGSpel = DLGSpel;
 })();
